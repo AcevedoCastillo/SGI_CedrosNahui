@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36109.1 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CedrosNahuizalquenos", "CedrosNahuizalquenos\CedrosNahuizalquenos.csproj", "{BEA5DB26-E65E-4C1A-84EE-886F3657A58C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CedrosNahuizalquenos.Client", "CedrosNahuizalquenos.Client\CedrosNahuizalquenos.Client.csproj", "{6DAB6AD5-FB7E-4ACE-9243-66BB3B018682}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BEA5DB26-E65E-4C1A-84EE-886F3657A58C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BEA5DB26-E65E-4C1A-84EE-886F3657A58C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BEA5DB26-E65E-4C1A-84EE-886F3657A58C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BEA5DB26-E65E-4C1A-84EE-886F3657A58C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DAB6AD5-FB7E-4ACE-9243-66BB3B018682}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DAB6AD5-FB7E-4ACE-9243-66BB3B018682}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DAB6AD5-FB7E-4ACE-9243-66BB3B018682}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DAB6AD5-FB7E-4ACE-9243-66BB3B018682}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {70828236-B5CE-46BE-A4BE-A95E3A04B292}
+	EndGlobalSection
+EndGlobal
