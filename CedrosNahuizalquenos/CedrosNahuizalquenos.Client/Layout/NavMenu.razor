@@ -1,10 +1,14 @@
-﻿
-<MudNavMenu>
+﻿<MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
     <MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
-    
+
     <MudNavLink Href="weather" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">Weather</MudNavLink>
 
+    <MudNavGroup Title="Cliente" Icon="@Icons.Material.Filled.Person">
+        <MudNavLink Href="crear-cliente" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AddCircle">Crear Cliente</MudNavLink>
+        <!-- Puedes agregar más enlaces relacionados aquí -->
+        <MudNavLink Href="lista-clientes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ListAlt">Lista Clientes</MudNavLink>
+    </MudNavGroup>
 </MudNavMenu>
 
 

@@ -1,0 +1,125 @@
+﻿@page "/crear-cliente"
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@using CedrosNahuizalquenos.Client.Models
+@using System.ComponentModel.DataAnnotations
+
+<MudPaper Class="pa-16 ma-2" MaxWidth="600px" Elevation="3">
+    <MudText Typo="Typo.h4" Class="mb-6 text-center" Color="Color.Primary">Formulario de Cliente</MudText>
+
+    <MudForm @ref="form" OnValidSubmit="CrearClienteAsync" OnInvalidSubmit="OnInvalidSubmit">
+
+        <MudTextField @bind-Value="cliente.Nombre" Label="Nombre" Required="true"
+                      For="@(() => cliente.Nombre)" Immediate="true"
+                      HelperText="Ingrese el nombre completo"
+                      Validation="@(new Func<string, string>(ValidarNombre))" />
+
+        <MudTextField @bind-Value="cliente.Telefono" Label="Teléfono"
+                      For="@(() => cliente.Telefono)" Immediate="true"
+                      HelperText="Ej: +50312345678"
+                      Validation="@(new Func<string, string>(ValidarTelefono))" />
+
+        <MudTextField @bind-Value="cliente.Correo" Label="Correo electrónico"
+                      For="@(() => cliente.Correo)" Immediate="true"
+                      HelperText="Ej: correo@dominio.com"
+                      Validation="@(new Func<string, string>(ValidarCorreo))" />
+
+        <MudTextField @bind-Value="cliente.Direccion" Label="Dirección"
+                      For="@(() => cliente.Direccion)" Immediate="true"
+                      HelperText="Dirección completa" />
+        <br />
+        <MudDatePicker @bind-Date="cliente.FechaRegistro" Label="Fecha de Registro" Required="true"
+                       For="@(() => cliente.FechaRegistro)" />
+
+        <MudButton Disabled="@_processing" OnClick="CrearClienteAsync" Variant="Variant.Filled" Color="Color.Primary" Class="mt-6 w-100">
+            @if (_processing)
+            {
+                <MudProgressCircular Class="me-2" Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
+                
+                <MudText Class ="ms-2"> Procesando... </MudText>
+            }
+            else
+            {
+                
+                <MudText>Guardar Cliente</MudText>
+            }
+        </MudButton>
+    </MudForm>
+</MudPaper>
+
+@code {
+    private MudForm form;
+    private ClienteDTO cliente = new() { FechaRegistro = DateTime.Now };
+    private bool _processing = false;
+
+    private async Task CrearClienteAsync()
+    {
+        _processing = true;
+        StateHasChanged();
+
+        await form.Validate();
+
+        if (!form.IsValid)
+        {
+            _processing = false;
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            await Task.Delay(2000);
+
+            var response = await Http.PostAsJsonAsync("api/clientes", cliente);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Cliente creado exitosamente", Severity.Success);
+
+                cliente = new ClienteDTO { FechaRegistro = DateTime.Now };
+                await form.ResetAsync();
+            }
+            else
+            {
+                Snackbar.Add("Error al crear el cliente", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+
+        _processing = false;
+        StateHasChanged();
+    }
+
+    private void OnInvalidSubmit()
+    {
+        Snackbar.Add("Por favor, corrija los errores en el formulario.", Severity.Warning);
+    }
+
+    private string ValidarNombre(string nombre)
+    {
+        if (string.IsNullOrWhiteSpace(nombre))
+            return "El nombre es obligatorio.";
+        if (nombre.Length < 3)
+            return "El nombre debe tener al menos 3 caracteres.";
+        return null;
+    }
+
+    private string ValidarTelefono(string telefono)
+    {
+        if (string.IsNullOrWhiteSpace(telefono))
+            return null;
+        var regex = new System.Text.RegularExpressions.Regex(@"^\+?\d{7,11}$");
+        return regex.IsMatch(telefono) ? null : "Teléfono inválido. Debe tener entre 8 y 12 dígitos, puede iniciar con +";
+    }
+
+    private string ValidarCorreo(string correo)
+    {
+        if (string.IsNullOrWhiteSpace(correo))
+            return null;
+        var emailAttribute = new EmailAddressAttribute();
+        return emailAttribute.IsValid(correo) ? null : "Correo electrónico inválido.";
+    }
+}

@@ -25,4 +25,9 @@
     <Folder Include="Infrastructure\Data\" />
   </ItemGroup>
 
+
+  <ItemGroup>
+    <None Include="..\CedrosNahuizalquenos.Client\Pages\Component.razor" Link="Component.razor" />
+  </ItemGroup>
+
 </Project>
