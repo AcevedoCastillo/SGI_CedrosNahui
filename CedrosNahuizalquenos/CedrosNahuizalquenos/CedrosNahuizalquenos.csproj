@@ -15,19 +15,14 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.1" />
   </ItemGroup>
 
 
   <ItemGroup>
-    <Folder Include="Aplication\Interfaces\" />
     <Folder Include="Aplication\Features\" />
     <Folder Include="Domain\Entities\" />
     <Folder Include="Infrastructure\Data\" />
-    <Folder Include="Infrastructure\Services\" />
-    <Folder Include="Mappings\" />
-    <Folder Include="Controllers\" />
-    <Folder Include="DTOs\" />
-    <Folder Include="Utils\" />
   </ItemGroup>
 
 </Project>
