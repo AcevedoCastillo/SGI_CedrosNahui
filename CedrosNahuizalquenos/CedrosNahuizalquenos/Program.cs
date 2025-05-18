@@ -1,11 +1,17 @@
 using CedrosNahuizalquenos.Client.Pages;
 using CedrosNahuizalquenos.Components;
+using CedrosNahuizalquenos.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add MudBlazor services
 builder.Services.AddMudServices();
+
+// Add SQLConecction
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

@@ -10,6 +10,24 @@
   <ItemGroup>
     <ProjectReference Include="..\CedrosNahuizalquenos.Client\CedrosNahuizalquenos.Client.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <Folder Include="Aplication\Interfaces\" />
+    <Folder Include="Aplication\Features\" />
+    <Folder Include="Domain\Entities\" />
+    <Folder Include="Infrastructure\Data\" />
+    <Folder Include="Infrastructure\Services\" />
+    <Folder Include="Mappings\" />
+    <Folder Include="Controllers\" />
+    <Folder Include="DTOs\" />
+    <Folder Include="Utils\" />
   </ItemGroup>
 
 </Project>
