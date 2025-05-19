@@ -1,0 +1,24 @@
+﻿@page "/"
+@page "/login"
+
+@inject NavigationManager Navigation
+
+<MudPaper Class="d-flex flex-column align-center justify-center pa-12 ma-auto" Style="max-width: 400px; margin-top: 10%;">
+    <MudText Typo="Typo.h5" Class="mb-4">Iniciar Sesión</MudText>
+
+    <MudTextField Label="Usuario" @bind-Value="usuario" Variant="Variant.Filled" Class="mb-3" />
+    <MudTextField Label="Contraseña" @bind-Value="contrasena" Variant="Variant.Filled" InputType="InputType.Password" Class="mb-4" />
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="IniciarSesion">Iniciar Sesión</MudButton>
+</MudPaper>
+
+@code {
+    private string usuario;
+    private string contrasena;
+
+    private void IniciarSesion()
+    {
+        // Simula login y redirige a Home
+        Navigation.NavigateTo("/home");
+    }
+}

@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -19,7 +20,6 @@
         @Body
     </MudMainContent>
 </MudLayout>
-
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
@@ -42,6 +42,23 @@
             PaletteDark = _darkPalette,
             LayoutProperties = new LayoutProperties()
         };
+
+        SetDrawerStateBasedOnUri();
+        NavigationManager.LocationChanged += (_, __) =>
+        {
+            SetDrawerStateBasedOnUri();
+            InvokeAsync(StateHasChanged);
+        };
+    }
+
+    private void SetDrawerStateBasedOnUri()
+    {
+        var uri = NavigationManager.Uri.ToLower();
+        // Ajusta esta condición según tus rutas de login
+        if (uri.EndsWith("/") || uri.Contains("/login"))
+            _drawerOpen = false; // cerrar drawer en login
+        else
+            _drawerOpen = true; // abrir drawer en otras páginas
     }
 
     private void DrawerToggle()
@@ -99,5 +116,3 @@
         false => Icons.Material.Outlined.DarkMode,
     };
 }
-
-
