@@ -1,0 +1,189 @@
+﻿@page "/clientes"
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@using CedrosNahuizalquenos.Client.Models
+@using System.Globalization
+@inject IDialogService DialogService
+
+<MudPaper Class="pa-16 ma-2" Elevation="3">
+
+    <MudTable Items="_clientes" Dense="@dense" Hover="@hover" Bordered="@bordered" Striped="@striped" Filter="new Func<ClienteDTO, bool>(FilterFunc1)" @bind-SelectedItem="_clienteEnEdicion">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Lista de Clientes</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Nombre</MudTh>
+            <MudTh>Teléfono</MudTh>
+            <MudTh>Correo</MudTh>
+            <MudTh>Dirección</MudTh>
+            <MudTh>Fecha Registro</MudTh>
+            <MudTh>Acciones</MudTh>
+        </HeaderContent>
+
+        <RowTemplate>
+            @if (_clienteEnEdicion?.ClienteId == context.ClienteId)
+            {
+                <MudTd>
+                    <MudTextField @bind-Value="_clienteEnEdicion.Nombre" Dense="true" />
+                </MudTd>
+                <MudTd>
+                    <MudTextField @bind-Value="_clienteEnEdicion.Telefono" Dense="true" />
+                </MudTd>
+                <MudTd>
+                    <MudTextField @bind-Value="_clienteEnEdicion.Correo" Dense="true" />
+                </MudTd>
+                <MudTd>
+                    <MudTextField @bind-Value="_clienteEnEdicion.Direccion" Dense="true" />
+                </MudTd>
+                <MudTd>
+                    <MudDatePicker @bind-Date="_clienteEnEdicion.FechaRegistro" Dense="true" />
+                </MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success" OnClick="@(() => GuardarEdicionAsync(context.ClienteId))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Error" OnClick="@CancelarEdicion" />
+                </MudTd>
+            }
+            else
+            {
+                <MudTd>@context.Nombre</MudTd>
+                <MudTd>@context.Telefono</MudTd>
+                <MudTd>@context.Correo</MudTd>
+                <MudTd>@context.Direccion</MudTd>
+                <MudTd>@(context.FechaRegistro.HasValue ? context.FechaRegistro.Value.ToString("dd/MM/yyyy") : "")</MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteUserAsync(context.ClienteId, context.Nombre))" />
+                </MudTd>
+            }
+        </RowTemplate>
+    </MudTable>
+    <div class="d-flex flex-wrap mt-4">
+        <MudSwitch @bind-Value="hover" Color="Color.Primary">Hover</MudSwitch>
+        <MudSwitch @bind-Value="dense" Color="Color.Secondary">Dense</MudSwitch>
+        <MudSwitch @bind-Value="striped" Color="Color.Tertiary">Striped</MudSwitch>
+        <MudSwitch @bind-Value="bordered" Color="Color.Warning">Bordered</MudSwitch>
+        <MudSpacer />
+        <div style="min-width:200px;">
+            <MudText Class="align-self-center d-inline">Selecciono: @_clienteEnEdicion?.Nombre</MudText>
+        </div>
+    </div>
+</MudPaper>
+
+@code {
+    #region Variables
+    private bool dense = false;
+    private bool hover = true;
+    private bool striped = false;
+    private bool bordered = false;
+    private List<ClienteDTO> _clientes = new();
+    private ClienteDTO _clienteEnEdicion;
+    private string searchString1 = "";
+    #endregion
+
+    private bool FilterFunc1(ClienteDTO element) => FilterFunc(element, searchString1);
+
+    private bool FilterFunc(ClienteDTO element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.Nombre.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if ($"{element.Nombre}".Contains(searchString))
+            return true;
+        return false;
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarClientesAsync();
+    }
+
+    private async Task CargarClientesAsync()
+    {
+        try
+        {
+            _clientes = await Http.GetFromJsonAsync<List<ClienteDTO>>("api/clientes");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar clientes: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void IniciarEdicion(ClienteDTO cliente)
+    {
+        // Clonamos el cliente para no modificar directamente
+        _clienteEnEdicion = new ClienteDTO
+        {
+            ClienteId = cliente.ClienteId,
+            Nombre = cliente.Nombre,
+            Telefono = cliente.Telefono,
+            Correo = cliente.Correo,
+            Direccion = cliente.Direccion,
+            FechaRegistro = cliente.FechaRegistro
+        };
+    }
+
+    private void CancelarEdicion()
+    {
+        _clienteEnEdicion = null;
+    }
+
+    private async Task GuardarEdicionAsync(int id)
+    {
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"api/clientes/{id}", _clienteEnEdicion);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Cliente actualizado correctamente", Severity.Success);
+                await CargarClientesAsync();
+                _clienteEnEdicion = null;
+            }
+            else
+            {
+                Snackbar.Add("Error al actualizar cliente", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+    private async Task DeleteUserAsync(int id, string nombre)
+    {
+        var parameters = new DialogParameters<Dialog>
+    {
+        { x => x.ContentText, $"¿Estás seguro de eliminar al cliente: {nombre}?" },
+        { x => x.ButtonText, "Eliminar" },
+        { x => x.Color, Color.Error }
+    };
+
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+        var dialog = await DialogService.ShowAsync<Dialog>("Eliminar Cliente", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                var response = await Http.DeleteAsync($"api/clientes/{id}");
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Cliente eliminado correctamente", Severity.Success);
+                    await CargarClientesAsync(); // Refresca la tabla
+                }
+                else
+                {
+                    Snackbar.Add("Error al eliminar cliente", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+}
