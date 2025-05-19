@@ -1,10 +1,10 @@
-﻿@page "/crear-cliente"
+﻿@page "/clientes/crear"
 @inject HttpClient Http
 @inject ISnackbar Snackbar
 @using CedrosNahuizalquenos.Client.Models
 @using System.ComponentModel.DataAnnotations
-
-<MudPaper Class="pa-16 ma-2" MaxWidth="600px" Elevation="3">
+<div style="display: flex; justify-content: center; align-items: center;">
+    <MudPaper Class="pa-16 ma-2" MaxWidth="600px" Elevation="3">
     <MudText Typo="Typo.h4" Class="mb-6 text-center" Color="Color.Primary">Formulario de Cliente</MudText>
 
     <MudForm @ref="form" OnValidSubmit="CrearClienteAsync" OnInvalidSubmit="OnInvalidSubmit">
@@ -46,7 +46,7 @@
         </MudButton>
     </MudForm>
 </MudPaper>
-
+</div>
 @code {
     private MudForm form;
     private ClienteDTO cliente = new() { FechaRegistro = DateTime.Now };
