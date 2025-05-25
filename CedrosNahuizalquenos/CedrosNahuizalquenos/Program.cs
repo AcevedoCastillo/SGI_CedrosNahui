@@ -1,5 +1,4 @@
 using CedrosNahuizalquenos.Aplication.Interfaces;
-using CedrosNahuizalquenos.Client.Pages;
 using CedrosNahuizalquenos.Components;
 using CedrosNahuizalquenos.Infrastructure.Data;
 using CedrosNahuizalquenos.Infrastructure.Services;
@@ -28,6 +27,8 @@ builder.Services.AddScoped<IProductoRepository, ProductRepository>();
 builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<IReporteService, ReporteService>();
 builder.Services.AddScoped<IReporteCliente, ReporteCliente>();
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+
 //Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -49,7 +50,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Cedros API V1");
-        // c.RoutePrefix = ""; // Opcional: para que swagger UI sea la raíz "/"
+        // c.RoutePrefix = ""; // Opcional: para que swagger UI sea la raï¿½z "/"
     });
 }
 else
@@ -66,14 +67,14 @@ app.UseStaticFiles();           // <-- necesario
 app.UseAntiforgery();
 
 app.MapStaticAssets();
-// Aquí agregamos el mapeo de los controllers para que respondan a las peticiones API
+// Aquï¿½ agregamos el mapeo de los controllers para que respondan a las peticiones API
 app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(CedrosNahuizalquenos.Client._Imports).Assembly);
 
-// <-- necesario para soportar F5 y navegación directa
+// <-- necesario para soportar F5 y navegaciï¿½n directa
 app.MapFallbackToFile("/client/{*path:nonfile}", "client/index.html");
 app.MapGet("/", context =>
 {
