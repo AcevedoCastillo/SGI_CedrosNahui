@@ -24,6 +24,8 @@ builder.Services.AddRazorComponents()
 builder.Services.AddControllers();
 builder.Services.AddScoped<IProductoRepository, ProductRepository>();
 builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
+builder.Services.AddScoped<IReporteService, ReporteService>();
+builder.Services.AddScoped<IReporteCliente, ReporteCliente>();
 //Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

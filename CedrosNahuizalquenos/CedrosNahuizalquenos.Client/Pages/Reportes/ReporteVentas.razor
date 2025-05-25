@@ -1,0 +1,130 @@
+﻿@page "/reportes/ventas"
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+@using CedrosNahuizalquenos.Client.Models
+@using System.Globalization
+
+<MudPaper Class="pa-16 ma-2" Elevation="3">
+    <MudGrid>
+        <MudItem xs="12" sm="4">
+            <MudDatePicker Label="Fecha inicio" @bind-Date="fechaInicio" />
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudDatePicker Label="Fecha fin" @bind-Date="fechaFin" />
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudSelect T="string"
+                       Value="@estado"
+                       ValueChanged="OnEstadoChanged"
+                       Label="Seleccione el estado"
+                       Placeholder="Seleccione el estado"
+                       AdornmentIcon="@Icons.Material.Filled.Search"
+                       AdornmentColor="Color.Primary">
+                <MudSelectItem Value="@("Todos")"> Todos </MudSelectItem>
+                <MudSelectItem Value="@("Aprobado")">Aprobado</MudSelectItem>
+                <MudSelectItem Value="@("Pagado")"> Pagado</MudSelectItem>
+                <MudSelectItem Value="@("Cancelado")">Cancelado</MudSelectItem>
+            </MudSelect>
+
+        </MudItem>
+    </MudGrid>
+
+    <MudButton OnClick="ExportarExcelAsync" Variant="Variant.Filled" Color="Color.Primary" Class="my-3">
+        Exportar Archivo Excel
+    </MudButton>
+
+
+    <MudTable Items="_pedidos" Dense="true" Hover="true" Bordered="true" Striped="true" Filter="new Func<ReporteVentasDTO, bool>(FilterFunc)">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Listado de Pedidos</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="searchString" Placeholder="Buscar cliente" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mt-0" />
+        </ToolBarContent>
+
+        <HeaderContent>
+            <MudTh>Pedido</MudTh>
+            <MudTh>Cliente</MudTh>
+            <MudTh>Fecha Pedido</MudTh>
+            <MudTh>Metodo de Pago</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh>Total</MudTh>
+        </HeaderContent>
+
+        <RowTemplate>
+            <MudTd DataLabel="ID">@context.PedidoID</MudTd>
+            <MudTd DataLabel="Cliente">@context.Cliente</MudTd>
+            <MudTd DataLabel="Fecha Pedido">@context.FechaPedido.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)</MudTd>
+            <MudTd DataLabel="Metodo de Pago">@context.MetodoPago</MudTd>
+            <MudTd DataLabel="Estado">@context.Estado</MudTd>
+            <MudTd DataLabel="Total">@context.Total</MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudPaper>
+
+@code {
+    private List<ReporteVentasDTO> _pedidos = new();
+    private string searchString = "";
+
+    private DateTime? fechaInicio = null;
+    private DateTime? fechaFin = null;
+    private string estado = "Todos";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarPedidosAsync();
+    }
+
+    private async Task OnEstadoChanged(string newEstado)
+    {
+        estado = newEstado;
+        await CargarPedidosAsync();
+    }
+    private async Task CargarPedidosAsync()
+    {
+        try
+        {
+            var url = $"/api/Reportes/ventas?estado={estado}";
+
+            if (fechaInicio.HasValue)
+                url += $"&fechaInicio={fechaInicio.Value:yyyy-MM-dd}";
+
+            if (fechaFin.HasValue)
+                url += $"&fechaFin={fechaFin.Value:yyyy-MM-dd}";
+
+            _pedidos = await Http.GetFromJsonAsync<List<ReporteVentasDTO>>(url);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar pedidos: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private bool FilterFunc(ReporteVentasDTO pedido)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+
+        return pedido.Cliente.Contains(searchString, StringComparison.OrdinalIgnoreCase);
+    }
+    private async Task ExportarExcelAsync()
+    {
+        try
+        {
+            var url = $"/api/Reportes/ventas/excel?fechaInicio={(fechaInicio.HasValue ? fechaInicio.Value.ToString("yyyy-MM-dd") : "")}&fechaFin={(fechaFin.HasValue ? fechaFin.Value.ToString("yyyy-MM-dd") : "")}&estado={estado}";
+            var stream = await Http.GetStreamAsync(url);
+
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            var base64 = Convert.ToBase64String(memoryStream.ToArray());
+            var filename = "ReporteVentas" + DateTime.Now + ".xlsx";
+
+            await JS.InvokeVoidAsync("descargarArchivoExcel", base64, filename);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al exportar: {ex.Message}", Severity.Error);
+        }
+    }
+
+}
