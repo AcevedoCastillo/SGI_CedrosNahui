@@ -72,6 +72,7 @@ namespace CedrosNahuizalquenos.WebAPI.Controllers
             usuario.Contrasena = dto.Contrasena;
             usuario.Rol = dto.Rol;
             usuario.Activo = dto.Activo;
+            usuario.FechaRegistro = dto.FechaRegistro;
             await _usuarioRepository.UpdateAsync(usuario);
             return NoContent();
         }
