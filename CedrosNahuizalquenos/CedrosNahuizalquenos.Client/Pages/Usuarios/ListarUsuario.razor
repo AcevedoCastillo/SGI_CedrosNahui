@@ -5,8 +5,7 @@
 @using CedrosNahuizalquenos.Client.Models
 
 <MudPaper Class="pa-16 ma-2" Elevation="3">
-    <MudTable Items="_usuarios" Dense="@dense" Hover="@hover" Bordered="@bordered" Striped="@striped"
-              Filter="new Func<UsuarioDTO, bool>(FilterFunc1)"
+    <MudTable Items="FilteredUsuarios" Dense="@dense" Hover="@hover" Bordered="@bordered" Striped="@striped"
               @bind-SelectedItem="_usuarioEnEdicion">
         <ToolBarContent>
             <MudText Typo="Typo.h6">Lista de Usuarios</MudText>
@@ -26,7 +25,7 @@
         </HeaderContent>
 
         <RowTemplate>
-           @if (_usuarioEnEdicion?.UsuarioID == context.UsuarioID)
+            @if (_usuarioEnEdicion?.UsuarioID == context.UsuarioID)
             {
                 <MudTd>
                     <MudTextField @bind-Value="_usuarioEnEdicion.Nombre" Dense="true" />
@@ -34,7 +33,9 @@
                 <MudTd>
                     <MudTextField @bind-Value="_usuarioEnEdicion.Correo" Dense="true" />
                 </MudTd>
-                <MudTd>  <MudTextField @bind-Value="_usuarioEnEdicion.Rol" Dense="true" /> </MudTd>
+                <MudTd>
+                    <MudTextField @bind-Value="_usuarioEnEdicion.Rol" Dense="true" />
+                </MudTd>
                 <MudTd>
                     <MudSwitch T="bool" @bind-Value="_usuarioEnEdicion.Activo" Color="Color.Primary" />
                 </MudTd>
@@ -42,9 +43,9 @@
                     <MudDatePicker @bind-Date="_usuarioEnEdicion.FechaRegistro" Dense="true" />
                 </MudTd>
                 <MudTd>
-                    <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success" 
+                    <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success"
                                    OnClick="@(() => GuardarEdicionAsync(context.UsuarioID))" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Error" 
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Error"
                                    OnClick="@CancelarEdicion" />
                 </MudTd>
             }
@@ -54,16 +55,23 @@
                 <MudTd>@context.Correo</MudTd>
                 <MudTd>@context.Rol</MudTd>
                 <MudTd> @(context.Activo ? "Activo" : "Inactivo") </MudTd>
-                <MudTd>@(context.FechaRegistro.HasValue ? context.FechaRegistro.Value.ToString("dd/MM/yyyy") : "")</MudTd>
+                <MudTd>@(context.FechaRegistro.HasValue? context.FechaRegistro.Value.ToString("dd/MM/yyyy") : "")</MudTd>
                 <MudTd>
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" 
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
                                    OnClick="@(() => IniciarEdicion(context))" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" 
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
                                    OnClick="@(() => DeleteUsuarioAsync(context.UsuarioID, context.Nombre))" />
                 </MudTd>
             }
         </RowTemplate>
     </MudTable>
+
+    @if (!string.IsNullOrWhiteSpace(searchString1) && !FilteredUsuarios.Any())
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Elevation="0" Class="mt-4">
+            No se encontraron usuarios que coincidan con el criterio de búsqueda.
+        </MudAlert>
+    }
 
     <div class="d-flex flex-wrap mt-4">
         <MudSwitch @bind-Value="hover" Color="Color.Primary">Hover</MudSwitch>
@@ -87,12 +95,14 @@
     private UsuarioDTO _usuarioEnEdicion;
     private string searchString1 = "";
 
-    private bool FilterFunc1(UsuarioDTO usuario) => FilterFunc(usuario, searchString1);
+    private IEnumerable<UsuarioDTO> FilteredUsuarios =>
+        _usuarios.Where(usuario => FilterFunc(usuario, searchString1));
 
     private bool FilterFunc(UsuarioDTO usuario, string searchString)
     {
         if (string.IsNullOrWhiteSpace(searchString))
             return true;
+
         return usuario.Nombre.Contains(searchString, StringComparison.OrdinalIgnoreCase)
             || usuario.Correo.Contains(searchString, StringComparison.OrdinalIgnoreCase);
     }
@@ -116,7 +126,6 @@
 
     private void IniciarEdicion(UsuarioDTO usuario)
     {
-        Console.WriteLine(usuario);
         _usuarioEnEdicion = new UsuarioDTO
         {
             UsuarioID = usuario.UsuarioID,
