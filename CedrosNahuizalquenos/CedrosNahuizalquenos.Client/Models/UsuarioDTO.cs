@@ -2,12 +2,12 @@
 {
     public class UsuarioDTO
     {
-        public int UsuarioID { get; set; }
-        public string Nombre { get; set; } = null!;
-        public string Correo { get; set; } = null!;
-        public string Contrasena { get; set; } = null!;
+        public int UsuarioId { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string Correo { get; set; } = string.Empty;
+        public string Contrasena { get; set; } = string.Empty;
         public int Rol { get; set; }
         public bool Activo { get; set; }
-        public DateTime? FechaRegistro { get; set; }
+        public DateTime? FechaRegistro { get; set; } // Nullable
     }
 }

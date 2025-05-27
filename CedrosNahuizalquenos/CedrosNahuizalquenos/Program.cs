@@ -1,8 +1,10 @@
 using CedrosNahuizalquenos.Aplication.Interfaces;
 using CedrosNahuizalquenos.Components;
+using CedrosNahuizalquenos.Domain.Entities;
 using CedrosNahuizalquenos.Infrastructure.Data;
 using CedrosNahuizalquenos.Infrastructure.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 
@@ -28,6 +30,8 @@ builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<IReporteService, ReporteService>();
 builder.Services.AddScoped<IReporteCliente, ReporteCliente>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
+
 
 //Swagger
 builder.Services.AddEndpointsApiExplorer();

@@ -1,6 +1,7 @@
 ﻿using CedrosNahuizalquenos.Aplication.Interfaces;
 using CedrosNahuizalquenos.Domain.Entities;
 using CedrosNahuizalquenos.DTOs;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CedrosNahuizalquenos.WebAPI.Controllers
@@ -10,9 +11,13 @@ namespace CedrosNahuizalquenos.WebAPI.Controllers
     public class UsuariosController : Controller
     {
         private readonly IUsuarioRepository _usuarioRepository;
-        public UsuariosController(IUsuarioRepository usuarioRepository)
+        private readonly IPasswordHasher<Usuario> _passwordHasher;
+
+        public UsuariosController(IUsuarioRepository usuarioRepository, IPasswordHasher<Usuario> passwordHasher)
         {
             _usuarioRepository = usuarioRepository;
+            _passwordHasher = passwordHasher;
+
         }
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -59,6 +64,9 @@ namespace CedrosNahuizalquenos.WebAPI.Controllers
                 Activo = dto.Activo,
                 FechaRegistro = DateTime.Now
             };
+
+            var usuarioParaHashear = new Usuario(); 
+            nuevoUsuario.Contrasena = _passwordHasher.HashPassword(usuarioParaHashear, dto.Contrasena);
             await _usuarioRepository.AddAsync(nuevoUsuario);
             return CreatedAtAction(nameof(GetById), new { id = nuevoUsuario.UsuarioId }, nuevoUsuario);
         }
@@ -72,7 +80,7 @@ namespace CedrosNahuizalquenos.WebAPI.Controllers
             usuario.Contrasena = dto.Contrasena;
             usuario.Rol = dto.Rol;
             usuario.Activo = dto.Activo;
-            usuario.FechaRegistro = dto.FechaRegistro;
+            usuario.FechaRegistro = dto.FechaRegistro??DateTime.Today;
             await _usuarioRepository.UpdateAsync(usuario);
             return NoContent();
         }
