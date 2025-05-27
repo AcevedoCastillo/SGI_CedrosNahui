@@ -25,7 +25,7 @@
         </HeaderContent>
 
         <RowTemplate>
-            @if (_usuarioEnEdicion?.UsuarioID == context.UsuarioID)
+            @if (_usuarioEnEdicion?.UsuarioId == context.UsuarioId)
             {
                 <MudTd>
                     <MudTextField @bind-Value="_usuarioEnEdicion.Nombre" Dense="true" />
@@ -44,7 +44,7 @@
                 </MudTd>
                 <MudTd>
                     <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success"
-                                   OnClick="@(() => GuardarEdicionAsync(context.UsuarioID))" />
+                                   OnClick="@(() => GuardarEdicionAsync(context.UsuarioId))" />
                     <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Error"
                                    OnClick="@CancelarEdicion" />
                 </MudTd>
@@ -60,7 +60,7 @@
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
                                    OnClick="@(() => IniciarEdicion(context))" />
                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
-                                   OnClick="@(() => DeleteUsuarioAsync(context.UsuarioID, context.Nombre))" />
+                                   OnClick="@(() => DeleteUsuarioAsync(context.UsuarioId, context.Nombre))" />
                 </MudTd>
             }
         </RowTemplate>
@@ -128,7 +128,7 @@
     {
         _usuarioEnEdicion = new UsuarioDTO
         {
-            UsuarioID = usuario.UsuarioID,
+            UsuarioId = usuario.UsuarioId,
             Nombre = usuario.Nombre,
             Correo = usuario.Correo,
             Contrasena = usuario.Contrasena,
