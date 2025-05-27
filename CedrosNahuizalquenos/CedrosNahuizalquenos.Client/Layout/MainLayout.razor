@@ -8,7 +8,7 @@
 <MudLayout>
     <MudAppBar Elevation="1">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-        <MudText Typo="Typo.h5" Class="ml-3">Application</MudText>
+        <MudText Typo="Typo.h5" Class="ml-3">Cedros Nahuizalqueños</MudText>
         <MudSpacer />
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
         <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
@@ -55,7 +55,7 @@
     {
         var uri = NavigationManager.Uri.ToLower();
         // Ajusta esta condición según tus rutas de login
-        if (uri.EndsWith("/") || uri.Contains("/login"))
+        if (uri.EndsWith("/client/") || uri.Contains("/client/login"))
             _drawerOpen = false; // cerrar drawer en login
         else
             _drawerOpen = true; // abrir drawer en otras páginas

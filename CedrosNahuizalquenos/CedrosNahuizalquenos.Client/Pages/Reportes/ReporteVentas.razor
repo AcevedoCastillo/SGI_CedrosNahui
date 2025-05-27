@@ -1,4 +1,4 @@
-﻿@page "/reportes/ventas"
+﻿@page "/client/reportes/ventas"
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
@@ -6,6 +6,7 @@
 @using System.Globalization
 
 <MudPaper Class="pa-16 ma-2" Elevation="3">
+    <MudText Typo="Typo.h5" Class="mb-2">Reporte de Ventas </MudText>
     <MudGrid>
         <MudItem xs="12" sm="4">
             <MudDatePicker Label="Fecha inicio" @bind-Date="fechaInicio" />
@@ -30,8 +31,18 @@
         </MudItem>
     </MudGrid>
 
-    <MudButton OnClick="ExportarExcelAsync" Variant="Variant.Filled" Color="Color.Primary" Class="my-3">
-        Exportar Archivo Excel
+    <MudButton OnClick="ExportarExcelAsync" Variant="Variant.Filled"  Color="Color.Tertiary" Class="my-3">
+            @if (_processing)
+            {
+                <MudProgressCircular Class="me-2" Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
+                
+                <MudText Class ="ms-2"> Procesando... </MudText>
+            }
+            else
+            {
+                
+                <MudText>Descargar Archivo Excel</MudText>
+            }
     </MudButton>
 
 
@@ -57,12 +68,13 @@
             <MudTd DataLabel="Fecha Pedido">@context.FechaPedido.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)</MudTd>
             <MudTd DataLabel="Metodo de Pago">@context.MetodoPago</MudTd>
             <MudTd DataLabel="Estado">@context.Estado</MudTd>
-            <MudTd DataLabel="Total">@context.Total</MudTd>
+            <MudTd DataLabel="Total">@string.Format(CultureInfo.CreateSpecificCulture("en-US"), "{0:C}", context.Total)</MudTd>
         </RowTemplate>
     </MudTable>
 </MudPaper>
 
 @code {
+    private bool _processing = false;
     private List<ReporteVentasDTO> _pedidos = new();
     private string searchString = "";
 
@@ -92,7 +104,9 @@
             if (fechaFin.HasValue)
                 url += $"&fechaFin={fechaFin.Value:yyyy-MM-dd}";
 
-            _pedidos = await Http.GetFromJsonAsync<List<ReporteVentasDTO>>(url);
+            _pedidos = (await Http.GetFromJsonAsync<List<ReporteVentasDTO>>(url))
+                        .OrderBy(p => p.PedidoID)
+                        .ToList();
         }
         catch (Exception ex)
         {
@@ -111,20 +125,38 @@
     {
         try
         {
+            _processing = true;
+            StateHasChanged();
+            await Task.Delay(2000);
             var url = $"/api/Reportes/ventas/excel?fechaInicio={(fechaInicio.HasValue ? fechaInicio.Value.ToString("yyyy-MM-dd") : "")}&fechaFin={(fechaFin.HasValue ? fechaFin.Value.ToString("yyyy-MM-dd") : "")}&estado={estado}";
             var stream = await Http.GetStreamAsync(url);
 
             using var memoryStream = new MemoryStream();
             await stream.CopyToAsync(memoryStream);
             var base64 = Convert.ToBase64String(memoryStream.ToArray());
-            var filename = "ReporteVentas" + DateTime.Now + ".xlsx";
+            var filename = $"ReporteVentas_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
 
-            await JS.InvokeVoidAsync("descargarArchivoExcel", base64, filename);
+            var jsCode = $@"
+                            (function() {{
+                                const base64 = '{base64}';
+                                const fileName = '{filename}';
+                                const link = document.createElement('a');
+                                link.download = fileName;
+                                link.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + base64;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                            }})();";
+
+            await JS.InvokeVoidAsync("eval", jsCode);
+            _processing = false;
+            StateHasChanged();
         }
         catch (Exception ex)
         {
             Snackbar.Add($"Error al exportar: {ex.Message}", Severity.Error);
         }
+
     }
 
 }

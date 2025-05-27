@@ -1,5 +1,166 @@
-﻿@page "/reportes/clientes"
+﻿@page "/client/reportes/clientes"
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+@using CedrosNahuizalquenos.Client.Models
+@using System.Globalization
+
+<MudPaper Class="pa-16 ma-2" Elevation="3">
+    <MudText Typo="Typo.h5" Class="mb-2">Reporte de Pedidos Por Cliente</MudText>
+    <MudGrid>
+        <MudItem xs="12" sm="4">
+            <MudDatePicker Label="Fecha inicio" @bind-Date="fechaInicio" />
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudDatePicker Label="Fecha fin" @bind-Date="fechaFin" />
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudSelect T="string"
+                       Value="@IdCliente.ToString()"
+                       ValueChanged="OnEstadoChanged"
+                       Label="Seleccione el Cliente"
+                       Placeholder="Seleccione el Cliente"
+                       AdornmentIcon="@Icons.Material.Filled.Person"
+                       AdornmentColor="Color.Primary">
+                <MudSelectItem Value="@("0")"> Todos </MudSelectItem>
+                @foreach (var state in clientes)
+                {
+                    <MudSelectItem Value="@state.ClienteId.ToString()">@state.Nombre</MudSelectItem>
+                }
+            </MudSelect>
+
+        </MudItem>
+    </MudGrid>
+
+    <MudButton OnClick="ExportarExcelAsync" Variant="Variant.Filled"  Color="Color.Tertiary" Class="my-3">
+            @if (_processing)
+            {
+                <MudProgressCircular Class="me-2" Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
+                
+                <MudText Class ="ms-2"> Procesando... </MudText>
+            }
+            else
+            {
+                
+                <MudText>Descargar Archivo Excel</MudText>
+            }
+    </MudButton>
+
+
+    <MudTable Items="_pedidos" Dense="true" Hover="true" Bordered="true" Striped="true" Filter="new Func<ReporteClientesDTO, bool>(FilterFunc)">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Listado de Pedidos</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="searchString" Placeholder="Buscar cliente" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mt-0" />
+        </ToolBarContent>
+
+        <HeaderContent>
+            <MudTh>ID</MudTh>
+            <MudTh>Cliente</MudTh>
+            <MudTh>Total de Pedidos</MudTh>
+            <MudTh>Monto Total</MudTh>
+            <MudTh>Primer Pedido</MudTh>
+            <MudTh>Ultimo Pedido</MudTh>
+        </HeaderContent>
+
+        <RowTemplate>
+            <MudTd DataLabel="ID">@context.ClienteID</MudTd>
+            <MudTd DataLabel="Cliente">@context.Cliente</MudTd>
+            <MudTd DataLabel="Total de Pedidos">@context.TotalPedidos</MudTd>
+            <MudTd DataLabel="Monto Total">@string.Format(CultureInfo.CreateSpecificCulture("en-US"), "{0:C}", context.MontoTotal)</MudTd>
+            <MudTd DataLabel="Primer Pedido">@context.PrimerPedido.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)</MudTd>
+            <MudTd DataLabel="Ultimo Pedido">@context.UltimoPedido.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)</MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudPaper>
 
 @code {
+    private bool _processing = false;
+    private List<ReporteClientesDTO> _pedidos = new();
+    private string searchString = "";
 
+    private DateTime? fechaInicio = null;
+    private DateTime? fechaFin = null;
+    private List<ClienteDTO> clientes = new();
+    private int IdCliente = 0; // 0 representa “Todos”
+
+    protected override async Task OnInitializedAsync()
+    {
+        clientes = (await Http.GetFromJsonAsync<List<ClienteDTO>>("/api/Clientes")).OrderBy(p => p.ClienteId).ToList();
+        await CargarPedidosAsync();
+
+    }
+
+    private async Task OnEstadoChanged(string newEstado)
+    {
+        int.TryParse(newEstado, out int clienteid);
+        IdCliente = clienteid;
+        await CargarPedidosAsync();
+    }
+    private async Task CargarPedidosAsync()
+    {
+        try
+        {
+            var url = $"/api/ReporteClientes/clientes?";
+
+            
+            url += $"&clienteId={IdCliente}";
+            if (fechaInicio.HasValue)
+                url += $"&fechaInicio={fechaInicio.Value:yyyy-MM-dd}";
+
+            if (fechaFin.HasValue)
+                url += $"&fechaFin={fechaFin.Value:yyyy-MM-dd}";
+
+            _pedidos = (await Http.GetFromJsonAsync<List<ReporteClientesDTO>>(url)).OrderBy(p => p.ClienteID).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar pedidos: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private bool FilterFunc(ReporteClientesDTO pedido)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+
+        return pedido.Cliente.Contains(searchString, StringComparison.OrdinalIgnoreCase);
+    }
+    private async Task ExportarExcelAsync()
+    {
+        try
+        {
+            _processing = true;
+            StateHasChanged();
+            await Task.Delay(2000);
+            var url = $"/api/ReporteClientes/clientes/excel?fechaInicio={(fechaInicio.HasValue ? fechaInicio.Value.ToString("yyyy-MM-dd") : "")}&fechaFin={(fechaFin.HasValue ? fechaFin.Value.ToString("yyyy-MM-dd") : "")}&clienteId={IdCliente}";
+            var stream = await Http.GetStreamAsync(url);
+
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            var base64 = Convert.ToBase64String(memoryStream.ToArray());
+            var filename = $"ReporteClientes_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+            var jsCode = $@"
+                            (function() {{
+                                const base64 = '{base64}';
+                                const fileName = '{filename}';
+                                const link = document.createElement('a');
+                                link.download = fileName;
+                                link.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + base64;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                            }})();";
+
+            await JS.InvokeVoidAsync("eval", jsCode);
+            _processing = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al exportar: {ex.Message}", Severity.Error);
+        }
+
+    }
 }
