@@ -1,0 +1,204 @@
+@page "/productos"
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@using CedrosNahuizalquenos.Client.Models
+@using System.Globalization
+
+<MudPaper Class="pa-16 ma-2" Elevation="3">
+    <MudTable Items="_productos"
+              Dense="@dense"
+              Hover="@hover"
+              Bordered="@bordered"
+              Striped="@striped"
+              Filter="new Func<ProductoDTO, bool>(FilterFunc1)"
+              @bind-SelectedItem="_productoEnEdicion">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Lista de Productos</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="searchString1"
+                          Placeholder="Search"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          IconSize="Size.Medium"
+                          Class="mt-0" />
+        </ToolBarContent>
+
+        <HeaderContent>
+            <MudTh>Nombre</MudTh>
+            <MudTh>Descripción</MudTh>
+            <MudTh>Precio</MudTh>
+            <MudTh>Imagen</MudTh>
+            <MudTh>Fecha Registro</MudTh>
+            <MudTh>Activo</MudTh>
+            <MudTh>Acciones</MudTh>
+        </HeaderContent>
+
+        <RowTemplate>
+            @if (_productoEnEdicion?.ProductoId == context.ProductoId)
+            {
+                <MudTd><MudTextField @bind-Value="_productoEnEdicion.Nombre" Dense="true" /></MudTd>
+                <MudTd><MudTextField @bind-Value="_productoEnEdicion.Descripcion" Dense="true" /></MudTd>
+                <MudTd><MudTextField @bind-Value="_productoEnEdicion.Precio" Dense="true" /></MudTd>
+
+
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success"
+                                   OnClick="@(() => GuardarEdicionAsync(context.ProductoId))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Error"
+                                   OnClick="@CancelarEdicion" />
+                </MudTd>
+            }
+            else
+            {
+                <MudTd>@context.Nombre</MudTd>
+                <MudTd>@context.Descripcion</MudTd>
+                <MudTd>@context.Precio.ToString("C", CultureInfo.CurrentCulture)</MudTd>
+                <MudTd>
+                    @if (!string.IsNullOrWhiteSpace(context.ImagenUrl))
+                    {
+                        <img src="@context.ImagenUrl" alt="Imagen" style="max-width:60px;max-height:60px;" />
+                    }
+                </MudTd>
+                <MudTd>@context.FechaRegistro.ToString("dd/MM/yyyy")</MudTd>
+                <MudTd>
+                    <MudSwitch T="bool" @bind-Checked="context.Activo" Disabled="true" />
+                </MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
+                                   OnClick="@(() => IniciarEdicion(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                   OnClick="@(() => DeleteProductoAsync(context.ProductoId, context.Nombre))" />
+                </MudTd>
+            }
+        </RowTemplate>
+    </MudTable>
+
+    <div class="d-flex flex-wrap mt-4">
+        <MudSwitch @bind-Value="hover" Color="Color.Primary">Hover</MudSwitch>
+        <MudSwitch @bind-Value="dense" Color="Color.Secondary">Dense</MudSwitch>
+        <MudSwitch @bind-Value="striped" Color="Color.Tertiary">Striped</MudSwitch>
+        <MudSwitch @bind-Value="bordered" Color="Color.Warning">Bordered</MudSwitch>
+        <MudSpacer />
+        <div style="min-width:200px;">
+            <MudText Class="align-self-center d-inline">Seleccionado: @_productoEnEdicion?.Nombre</MudText>
+        </div>
+    </div>
+</MudPaper>
+
+@code {
+    private bool dense = false;
+    private bool hover = true;
+    private bool striped = false;
+    private bool bordered = false;
+    private List<ProductoDTO> _productos = new();
+    private ProductoDTO _productoEnEdicion;
+    private string searchString1 = "";
+
+    private bool FilterFunc1(ProductoDTO element) => FilterFunc(element, searchString1);
+
+    private bool FilterFunc(ProductoDTO element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+
+        return element.Nombre.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+               (!string.IsNullOrWhiteSpace(element.Descripcion) &&
+                element.Descripcion.Contains(searchString, StringComparison.OrdinalIgnoreCase));
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarProductosAsync();
+    }
+
+    private async Task CargarProductosAsync()
+    {
+        try
+        {
+            var result = await Http.GetFromJsonAsync<List<ProductoDTO>>("api/productos");
+            if (result != null)
+                _productos = result;
+        }
+        catch (Exception ex)
+        {
+        }
+    }
+
+    private void IniciarEdicion(ProductoDTO producto)
+    {
+        _productoEnEdicion = new ProductoDTO
+        {
+            ProductoId = producto.ProductoId,
+            Nombre = producto.Nombre,
+            Descripcion = producto.Descripcion,
+            Precio = producto.Precio,
+            ImagenUrl = producto.ImagenUrl,
+            FechaRegistro = producto.FechaRegistro,
+            Activo = producto.Activo
+        };
+    }
+
+    private void CancelarEdicion()
+    {
+        _productoEnEdicion = null;
+    }
+
+    private async Task GuardarEdicionAsync(int id)
+    {
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"api/productos/{id}", _productoEnEdicion);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Producto actualizado correctamente", Severity.Success);
+                await CargarProductosAsync();
+                _productoEnEdicion = null;
+            }
+            else
+            {
+                Snackbar.Add("Error al actualizar producto", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeleteProductoAsync(int id, string nombre)
+    {
+        var parameters = new DialogParameters<Dialog>
+        {
+            { x => x.ContentText, $"¿Estás seguro de eliminar el producto: {nombre}?" },
+            { x => x.ButtonText, "Eliminar" },
+            { x => x.Color, Color.Error }
+        };
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+        var dialog = await DialogService.ShowAsync<Dialog>("Eliminar Producto", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                var response = await Http.DeleteAsync($"api/productos/{id}");
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Producto eliminado correctamente", Severity.Success);
+                    await CargarProductosAsync();
+                }
+                else
+                {
+                    Snackbar.Add("Error al eliminar producto", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+}
