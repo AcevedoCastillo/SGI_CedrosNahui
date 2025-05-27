@@ -3,10 +3,12 @@ using CedrosNahuizalquenos.Client.Pages;
 using CedrosNahuizalquenos.Components;
 using CedrosNahuizalquenos.Infrastructure.Data;
 using CedrosNahuizalquenos.Infrastructure.Services;
+using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddHttpClient();
 
 // Add MudBlazor services
 builder.Services.AddMudServices();
@@ -24,9 +26,17 @@ builder.Services.AddRazorComponents()
 builder.Services.AddControllers();
 builder.Services.AddScoped<IProductoRepository, ProductRepository>();
 builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
+builder.Services.AddScoped<IReporteService, ReporteService>();
+builder.Services.AddScoped<IReporteCliente, ReporteCliente>();
 //Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped(sp =>
+{
+    var navigationManager = sp.GetRequiredService<NavigationManager>();
+    return new HttpClient { BaseAddress = new Uri(navigationManager.BaseUri) };
+});
+
 
 var app = builder.Build();
 
@@ -51,7 +61,8 @@ else
 
 app.UseHttpsRedirection();
 
-
+app.UseBlazorFrameworkFiles("/client");  // <-- necesario
+app.UseStaticFiles();           // <-- necesario
 app.UseAntiforgery();
 
 app.MapStaticAssets();
@@ -61,5 +72,13 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(CedrosNahuizalquenos.Client._Imports).Assembly);
+
+// <-- necesario para soportar F5 y navegación directa
+app.MapFallbackToFile("/client/{*path:nonfile}", "client/index.html");
+app.MapGet("/", context =>
+{
+    context.Response.Redirect("/client/login");
+    return Task.CompletedTask;
+});
 
 app.Run();

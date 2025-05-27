@@ -1,7 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using CedrosNahuizalquenos.Domain.Entities;
+﻿using CedrosNahuizalquenos.Domain.Entities;
+using CedrosNahuizalquenos.DTOs;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
 
 namespace CedrosNahuizalquenos.Infrastructure.Data;
 
@@ -133,9 +134,9 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(e => e.FechaRegistro).HasColumnType("datetime");
             entity.Property(e => e.Nombre).HasMaxLength(100);
         });
-
+        modelBuilder.Entity<ReporteVentasDTO>().HasNoKey().ToView(null);
+        modelBuilder.Entity<ReporteClientesDTO>().HasNoKey().ToView(null);
         OnModelCreatingPartial(modelBuilder);
     }
-
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }

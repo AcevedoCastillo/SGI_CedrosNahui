@@ -1,5 +1,5 @@
-﻿@page "/"
-@page "/login"
+﻿@page "/client/"
+@page "/client/login"
 
 @inject NavigationManager Navigation
 
@@ -19,6 +19,6 @@
     private void IniciarSesion()
     {
         // Simula login y redirige a Home
-        Navigation.NavigateTo("/home");
+        Navigation.NavigateTo("/client/home");
     }
 }
