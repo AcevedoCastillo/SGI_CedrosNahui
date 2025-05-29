@@ -1,0 +1,203 @@
+﻿@page "/usuarios"
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@using CedrosNahuizalquenos.Client.Models
+
+<MudPaper Class="pa-16 ma-2" Elevation="3">
+    <MudTable Items="FilteredUsuarios" Dense="@dense" Hover="@hover" Bordered="@bordered" Striped="@striped"
+              @bind-SelectedItem="_usuarioEnEdicion">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Lista de Usuarios</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="searchString1" Placeholder="Buscar"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          IconSize="Size.Medium" Class="mt-0" />
+        </ToolBarContent>
+
+        <HeaderContent>
+            <MudTh>Nombre</MudTh>
+            <MudTh>Correo</MudTh>
+            <MudTh>Rol</MudTh>
+            <MudTh>Activo</MudTh>
+            <MudTh>Fecha Registro</MudTh>
+            <MudTh>Acciones</MudTh>
+        </HeaderContent>
+
+        <RowTemplate>
+            @if (_usuarioEnEdicion?.UsuarioId == context.UsuarioId)
+            {
+                <MudTd>
+                    <MudTextField @bind-Value="_usuarioEnEdicion.Nombre" Dense="true" />
+                </MudTd>
+                <MudTd>
+                    <MudTextField @bind-Value="_usuarioEnEdicion.Correo" Dense="true" />
+                </MudTd>
+                <MudTd>
+                    <MudTextField @bind-Value="_usuarioEnEdicion.Rol" Dense="true" />
+                </MudTd>
+                <MudTd>
+                    <MudSwitch T="bool" @bind-Value="_usuarioEnEdicion.Activo" Color="Color.Primary" />
+                </MudTd>
+                <MudTd>
+                    <MudDatePicker @bind-Date="_usuarioEnEdicion.FechaRegistro" Dense="true" />
+                </MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success"
+                                   OnClick="@(() => GuardarEdicionAsync(context.UsuarioId))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Error"
+                                   OnClick="@CancelarEdicion" />
+                </MudTd>
+            }
+            else
+            {
+                <MudTd>@context.Nombre</MudTd>
+                <MudTd>@context.Correo</MudTd>
+                <MudTd>@context.Rol</MudTd>
+                <MudTd> @(context.Activo ? "Activo" : "Inactivo") </MudTd>
+                <MudTd>@(context.FechaRegistro.HasValue? context.FechaRegistro.Value.ToString("dd/MM/yyyy") : "")</MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
+                                   OnClick="@(() => IniciarEdicion(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                   OnClick="@(() => DeleteUsuarioAsync(context.UsuarioId, context.Nombre))" />
+                </MudTd>
+            }
+        </RowTemplate>
+    </MudTable>
+
+    @if (!string.IsNullOrWhiteSpace(searchString1) && !FilteredUsuarios.Any())
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Elevation="0" Class="mt-4">
+            No se encontraron usuarios que coincidan con el criterio de búsqueda.
+        </MudAlert>
+    }
+
+    <div class="d-flex flex-wrap mt-4">
+        <MudSwitch @bind-Value="hover" Color="Color.Primary">Hover</MudSwitch>
+        <MudSwitch @bind-Value="dense" Color="Color.Secondary">Dense</MudSwitch>
+        <MudSwitch @bind-Value="striped" Color="Color.Tertiary">Striped</MudSwitch>
+        <MudSwitch @bind-Value="bordered" Color="Color.Warning">Bordered</MudSwitch>
+        <MudSpacer />
+        <div style="min-width:200px;">
+            <MudText Class="align-self-center d-inline">Seleccionado: @_usuarioEnEdicion?.Nombre</MudText>
+        </div>
+    </div>
+</MudPaper>
+
+@code {
+    private bool dense = false;
+    private bool hover = true;
+    private bool striped = false;
+    private bool bordered = false;
+
+    private List<UsuarioDTO> _usuarios = new();
+    private UsuarioDTO _usuarioEnEdicion;
+    private string searchString1 = "";
+
+    private IEnumerable<UsuarioDTO> FilteredUsuarios =>
+        _usuarios.Where(usuario => FilterFunc(usuario, searchString1));
+
+    private bool FilterFunc(UsuarioDTO usuario, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+
+        return usuario.Nombre.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+            || usuario.Correo.Contains(searchString, StringComparison.OrdinalIgnoreCase);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarUsuariosAsync();
+    }
+
+    private async Task CargarUsuariosAsync()
+    {
+        try
+        {
+            _usuarios = await Http.GetFromJsonAsync<List<UsuarioDTO>>("api/usuarios");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar usuarios: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void IniciarEdicion(UsuarioDTO usuario)
+    {
+        _usuarioEnEdicion = new UsuarioDTO
+        {
+            UsuarioId = usuario.UsuarioId,
+            Nombre = usuario.Nombre,
+            Correo = usuario.Correo,
+            Contrasena = usuario.Contrasena,
+            Rol = usuario.Rol,
+            Activo = usuario.Activo,
+            FechaRegistro = usuario.FechaRegistro
+        };
+    }
+
+    private void CancelarEdicion()
+    {
+        _usuarioEnEdicion = null;
+    }
+
+    private async Task GuardarEdicionAsync(int id)
+    {
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"api/usuarios/{id}", _usuarioEnEdicion);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Usuario actualizado correctamente", Severity.Success);
+                await CargarUsuariosAsync();
+                _usuarioEnEdicion = null;
+            }
+            else
+            {
+                Snackbar.Add("Error al actualizar usuario", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeleteUsuarioAsync(int id, string nombre)
+    {
+        var parameters = new DialogParameters<Dialog>
+        {
+            { x => x.ContentText, $"¿Estás seguro de eliminar al usuario: {nombre}?" },
+            { x => x.ButtonText, "Eliminar" },
+            { x => x.Color, Color.Error }
+        };
+
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+        var dialog = await DialogService.ShowAsync<Dialog>("Eliminar Usuario", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                var response = await Http.DeleteAsync($"api/usuarios/{id}");
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Usuario eliminado correctamente", Severity.Success);
+                    await CargarUsuariosAsync();
+                }
+                else
+                {
+                    Snackbar.Add("Error al eliminar usuario", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+}
