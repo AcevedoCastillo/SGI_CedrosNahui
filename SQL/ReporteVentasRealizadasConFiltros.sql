@@ -3,7 +3,7 @@
 -- Create date: 2025-05-24
 -- Description:	Procedimiento para traer las ventas realizadas
 -- =============================================
-CREATE PROCEDURE ReporteVentasRealizadasConFiltros
+CREATE OR ALTER PROCEDURE ReporteVentasRealizadasConFiltros
     @FechaInicio DATETIME = NULL,
     @FechaFin DATETIME = NULL,
     @Estado VARCHAR(30) = NULL -- Opcional: 'Aprobado', 'Por Validar', etc.
