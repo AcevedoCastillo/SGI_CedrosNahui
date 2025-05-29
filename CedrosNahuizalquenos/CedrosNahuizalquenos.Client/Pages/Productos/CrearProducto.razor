@@ -1,0 +1,157 @@
+﻿@page "/productos/crear"
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@using CedrosNahuizalquenos.Client.Models
+@using System.ComponentModel.DataAnnotations
+@using System.Text.Json
+<div style="display: flex; justify-content: center; align-items: center;">
+    <MudPaper Class="pa-16 ma-2" MaxWidth="600px" Elevation="3">
+    <MudText Typo="Typo.h4" Class="mb-6 text-center" Color="Color.Primary">Agregar Producto</MudText>
+
+    <MudForm @ref="form" OnValidSubmit="CrearProductoAsync" OnInvalidSubmit="OnInvalidSubmit">
+
+        <MudTextField @bind-Value="producto.Nombre" Label="Nombre" Required="true"
+                      For="@(() => producto.Nombre)" Immediate="true"
+                      HelperText="Ingrese el nombre del producto"
+                      Validation="@(new Func<string, string>(ValidarNombre))" />
+
+        <MudTextField @bind-Value="producto.Descripcion" Label="Descripción"
+                      For="@(() => producto.Descripcion)" Immediate="true"
+                      HelperText="Descripción del producto" />
+
+        <MudTextField @bind-Value="producto.Precio" Label="Precio" Required="true"
+                      For="@(() => producto.Precio)" Immediate="true"
+                      HelperText="Ej: 9.99"
+                      Validation="@(new Func<decimal, string>(ValidarPrecio))" />
+
+        <MudText Typo="Typo.subtitle2" Class="mt-4">Imagen del Producto</MudText>
+        <InputFile OnChange="HandleImageUpload" accept="image/*" />
+            @if (!string.IsNullOrEmpty(nombreArchivoImagen))
+            {
+                <MudText Typo="Typo.caption" Class="mt-1">Archivo seleccionado: @nombreArchivoImagen</MudText>
+            }
+
+        <MudButton Disabled="@_processing" OnClick="CrearProductoAsync" Variant="Variant.Filled" Color="Color.Primary" Class="mt-6 w-100">
+            @if (_processing)
+            {
+                <MudProgressCircular Class="me-2" Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
+                <MudText Class ="ms-2"> Procesando... </MudText>
+            }
+            else
+            {
+                <MudText>Guardar Producto</MudText>
+            }
+        </MudButton>
+    </MudForm>
+</MudPaper>
+</div>
+@code {
+    private MudForm form;
+    private ProductoDTO producto = new() { FechaRegistro = DateTime.Now };
+    private bool _processing = false;
+    private IBrowserFile imagenArchivo;
+    private string nombreArchivoImagen;
+    private const string ImgBBApiKey = "2056af454a729ce20557330bc91b2bed";
+    private async Task<string> SubirImagenAImgBBAsync()
+    {
+        if (imagenArchivo == null)
+            return null;
+
+        using var stream = imagenArchivo.OpenReadStream(5_000_000); // 5 MB
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+        var  bytes = ms.ToArray();
+        var base64 = Convert.ToBase64String(bytes);
+
+        var formData = new Dictionary<string, string>
+    {
+        { "key", ImgBBApiKey },
+        { "image", base64 }
+    };
+
+        var content = new FormUrlEncodedContent(formData);
+        var response = await Http.PostAsync("https://api.imgbb.com/1/upload", content);
+
+        if (!response.IsSuccessStatusCode)
+            throw new Exception("Falló la subida de imagen a ImgBB");
+
+        var resultJson = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(resultJson);
+        return doc.RootElement.GetProperty("data").GetProperty("url").GetString();
+    }
+    private async Task CrearProductoAsync()
+    {
+        _processing = true;
+        StateHasChanged();
+
+        await form.Validate();
+
+        if (!form.IsValid)
+        {
+            _processing = false;
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            if (imagenArchivo != null)
+            {
+                var urlImagen = await SubirImagenAImgBBAsync();
+                producto.ImagenUrl = urlImagen;
+            }
+
+            var response = await Http.PostAsJsonAsync("api/productos", producto);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Producto creado exitosamente", Severity.Success);
+                producto = new ProductoDTO { FechaRegistro = DateTime.Now };
+                imagenArchivo = null;
+                nombreArchivoImagen = null;
+                await form.ResetAsync();
+            }
+            else
+            {
+                Snackbar.Add("Error al crear el producto", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+
+        _processing = false;
+        StateHasChanged();
+    }
+
+
+    private void OnInvalidSubmit()
+    {
+        Snackbar.Add("Por favor, corrija los errores en el formulario.", Severity.Warning);
+    }
+
+    private string ValidarNombre(string nombre)
+    {
+        if (string.IsNullOrWhiteSpace(nombre))
+            return "El nombre es obligatorio.";
+        if (nombre.Length < 3)
+            return "El nombre debe tener al menos 3 caracteres.";
+        return null;
+    }
+
+    private string ValidarPrecio(decimal precio)
+    {
+        if (precio <= 0)
+            return "El precio debe ser mayor a 0.";
+        return null;
+    }
+
+    private void HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        imagenArchivo = e.File;
+        nombreArchivoImagen = imagenArchivo?.Name;
+    }
+}
+
+
