@@ -136,6 +136,7 @@ public partial class ApplicationDbContext : DbContext
         });
         modelBuilder.Entity<ReporteVentasDTO>().HasNoKey().ToView(null);
         modelBuilder.Entity<ReporteClientesDTO>().HasNoKey().ToView(null);
+        modelBuilder.Entity<ReporteProductoDTO>().HasNoKey().ToView(null);
         OnModelCreatingPartial(modelBuilder);
     }
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
