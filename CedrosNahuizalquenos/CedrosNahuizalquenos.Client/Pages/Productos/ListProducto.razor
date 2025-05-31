@@ -53,7 +53,7 @@
             {
                 <MudTd>@context.Nombre</MudTd>
                 <MudTd>@context.Descripcion</MudTd>
-                <MudTd>@context.Precio.ToString("C", CultureInfo.CurrentCulture)</MudTd>
+                <MudTd>@string.Format(CultureInfo.CreateSpecificCulture("en-US"), "{0:C}", context.Precio)</MudTd>
                 <MudTd>
                     @if (!string.IsNullOrWhiteSpace(context.ImagenUrl))
                     {
