@@ -39,6 +39,10 @@ namespace CedrosNahuizalquenos.WebAPI.Controllers
             public string Usuario { get; set; }
             public string Contrasena { get; set; }
         }
+        public class LoginResponse
+        {
+            public string Token { get; set; }
+        }
     }
 
 }
