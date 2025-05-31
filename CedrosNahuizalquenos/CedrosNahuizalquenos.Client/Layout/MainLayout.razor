@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject NavigationManager NavigationManager
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
@@ -8,10 +9,21 @@
 <MudLayout>
     <MudAppBar Elevation="1">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+
+        <img src="https://i.ibb.co/LXy30Tx3/photo-2024-09-29-21-10-51.jpg"
+             alt="Imagen"
+             style="height:50px; width:auto; border-radius:10px; object-fit:cover;" />
+
         <MudText Typo="Typo.h5" Class="ml-3">Cedros Nahuizalqueños</MudText>
+
         <MudSpacer />
+
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
         <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
+        @if (isLoggedIn)
+        {
+            <MudButton Color="Color.Error" OnClick="Logout">Cerrar Sesión</MudButton>
+        }
     </MudAppBar>
     <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
         <NavMenu />
@@ -31,6 +43,10 @@
     private bool _drawerOpen = true;
     private bool _isDarkMode = true;
     private MudTheme? _theme = null;
+    private bool isLoggedIn = false;
+    private bool _initialized = false;
+
+
 
     protected override void OnInitialized()
     {
@@ -50,7 +66,19 @@
             InvokeAsync(StateHasChanged);
         };
     }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_initialized)
+        {
+            _initialized = true;
 
+            if (await LocalStorage.ContainKeyAsync("loggedIn"))
+            {
+                isLoggedIn = await LocalStorage.GetItemAsync<bool>("loggedIn");
+                StateHasChanged(); // fuerza redibujado con el valor cargado
+            }
+        }
+    }
     private void SetDrawerStateBasedOnUri()
     {
         var uri = NavigationManager.Uri.ToLower();
@@ -64,6 +92,13 @@
     private void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
+    }
+    private async Task Logout()
+    {
+        await LocalStorage.RemoveItemAsync("loggedIn");
+        isLoggedIn = false;
+
+        NavigationManager.NavigateTo("/client/login", forceLoad: true);
     }
 
     private void DarkModeToggle()
@@ -115,4 +150,6 @@
         true => Icons.Material.Rounded.AutoMode,
         false => Icons.Material.Outlined.DarkMode,
     };
+
+
 }

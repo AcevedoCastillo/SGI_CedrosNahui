@@ -9,5 +9,6 @@ namespace CedrosNahuizalquenos.Aplication.Interfaces
         Task AddAsync(Usuario usuario);
         Task UpdateAsync(Usuario usuario);
         Task DeleteAsync(int id);
+        Task<Usuario?> GetByCredentialsAsync(string usuario, string contrasena);
     }
 }
