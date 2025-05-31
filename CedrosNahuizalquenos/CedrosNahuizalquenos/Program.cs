@@ -1,3 +1,4 @@
+using Blazored.LocalStorage;
 using CedrosNahuizalquenos.Aplication.Interfaces;
 using CedrosNahuizalquenos.Components;
 using CedrosNahuizalquenos.Domain.Entities;
@@ -13,7 +14,7 @@ builder.Services.AddHttpClient();
 
 // Add MudBlazor services
 builder.Services.AddMudServices();
-
+builder.Services.AddBlazoredLocalStorage();
 // Add SQLConecction
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

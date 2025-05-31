@@ -47,7 +47,7 @@
 </div>
 @code {
     private MudForm form;
-    private ProductoDTO producto = new() { FechaRegistro = DateTime.Now };
+    private ProductoDTO producto = new() { FechaRegistro = DateTime.Now, Activo = true };
     private bool _processing = false;
     private IBrowserFile imagenArchivo;
     private string nombreArchivoImagen;

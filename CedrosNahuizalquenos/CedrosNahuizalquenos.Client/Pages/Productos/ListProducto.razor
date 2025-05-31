@@ -62,8 +62,9 @@
                 </MudTd>
                 <MudTd>@context.FechaRegistro.ToString("dd/MM/yyyy")</MudTd>
                 <MudTd>
-                    <MudSwitch T="bool" @bind-Checked="context.Activo" Disabled="true" />
+                    <MudSwitch T="bool"  @bind-Value="context.Activo" Disabled="true"/>
                 </MudTd>
+
                 <MudTd>
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
                                    OnClick="@(() => IniciarEdicion(context))" />
