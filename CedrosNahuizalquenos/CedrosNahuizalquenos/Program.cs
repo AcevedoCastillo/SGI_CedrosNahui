@@ -32,6 +32,8 @@ builder.Services.AddScoped<IReporteService, ReporteService>();
 builder.Services.AddScoped<IReporteCliente, ReporteCliente>();
 builder.Services.AddScoped<IReporteProducto, ReporteProducto>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+builder.Services.AddScoped<IPedidoService, PedidoService>();
+
 builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
 
 

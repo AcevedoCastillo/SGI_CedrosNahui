@@ -1,0 +1,237 @@
+﻿@page "/client/pedido/ventas"
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@using CedrosNahuizalquenos.Client.Models
+@using System.Globalization
+
+<MudPaper Class="pa-10 ma-4" Elevation="3" MaxWidth="900px">
+    <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-6 text-center">Registrar Pedido</MudText>
+
+    <MudForm @ref="form" OnValidSubmit="CrearPedidoAsync">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudSelect T="int" Label="Cliente" @bind-Value="pedido.ClienteId" Required="true" AdornmentIcon="@Icons.Material.Filled.Person" AdornmentColor="Color.Primary">
+                    <MudSelectItem Value="0">Seleccione</MudSelectItem>
+                    @foreach (var cliente in clientes)
+                    {
+                        <MudSelectItem Value="@cliente.ClienteId">@cliente.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudSelect T="int" Label="Usuario" @bind-Value="pedido.UsuarioId" Required="true" AdornmentIcon="@Icons.Material.Filled.Person">
+                    <MudSelectItem Value="0">Seleccione</MudSelectItem>
+                    @foreach (var usuario in usuarios)
+                    {
+                        <MudSelectItem Value="@usuario.UsuarioId">@usuario.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudSelect T="string" Label="Método de Pago" @bind-Value="pedido.MetodoPago" Required="true" AdornmentIcon="@Icons.Material.Filled.Search">
+                    <MudSelectItem Value="@("Efectivo")">Efectivo</MudSelectItem>
+                    <MudSelectItem Value="@("Transferencia")">Transferencia</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudSelect T="string" Label="Estado del Pedido" @bind-Value="pedido.Estado" Required="true" AdornmentIcon="@Icons.Material.Filled.Search">
+                    <MudSelectItem Value="@("Por Validar")">Por Validar</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudTextField Label="Nota" @bind-Value="pedido.Nota" />
+            </MudItem>
+        </MudGrid>
+
+        <MudDivider Class="my-4" />
+        <MudText Typo="Typo.h6" Color="Color.Primary">Detalle del Pedido</MudText>
+
+        @foreach (var detalle in pedido.DetallePedidos)
+        {
+            <MudGrid Class="mt-3" GutterSize="2">
+                <MudItem xs="12" md="4">
+                    <MudSelect T="int"
+                               Label="Producto"
+                               Value="detalle.ProductoId"
+                               ValueChanged="(id) => OnProductoSeleccionado(detalle, id)"
+                               Required="true"
+                               ToStringFunc="@(id => ObtenerNombreProducto(id))">
+                        @foreach (var producto in productos)
+                        {
+                            <MudSelectItem Value="producto.ProductoId">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    @if (!string.IsNullOrWhiteSpace(producto.ImagenUrl))
+                                    {
+                                        <img src="@producto.ImagenUrl" alt="Imagen" style="max-width: 40px; max-height: 40px;" />
+                                    }
+                                    <span>@producto.Nombre</span>
+                                </div>
+                            </MudSelectItem>
+                        }
+                    </MudSelect>
+
+                </MudItem>
+                <MudItem xs="6" md="2">
+                    <MudNumericField T="int" Label="Cantidad" @bind-Value="detalle.Cantidad"
+                                     OnBlur="() => ActualizarSubtotal(detalle)" Immediate="true" Min="0"/>
+                </MudItem>
+                <MudItem xs="6" md="3">
+
+                    <MudNumericField T="decimal" Label="Precio Unitario" @bind-Value="detalle.PrecioUnitario"
+                                     OnBlur="() => ActualizarSubtotal(detalle)" Immediate="true" Disabled="true" Min="0"/>
+                </MudItem>
+                <MudItem xs="12" md="2">
+                    <MudTextField Label="Subtotal" @bind-Value="detalle.Subtotal" Disabled="true" />
+                </MudItem>
+                <MudItem xs="12" md="1">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => EliminarDetalle(detalle)" />
+                </MudItem>
+            </MudGrid>
+        }
+
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Class="mt-4" OnClick="AgregarDetalle">
+            Agregar Producto
+        </MudButton>
+
+        <MudDivider Class="my-4" />
+
+        <MudText Typo="Typo.subtitle1">Total: <b>@string.Format(CultureInfo.CreateSpecificCulture("en-US"), "{0:C}", pedido.Total)</b></MudText>
+
+        <MudButton Disabled="@_processing" Color="Color.Primary" Variant="Variant.Filled" Class="mt-4 w-100" OnClick="CrearPedidoAsync">
+            @if (_processing)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Primary" Class="me-2" />
+                <MudText Class ="ms-2"> Procesando... </MudText>
+            }
+            else
+            {
+                
+                <MudText>Guardar Pedido</MudText>
+            }
+        </MudButton>
+    </MudForm>
+</MudPaper>
+
+@code {
+    private MudForm form;
+    private bool _processing = false;
+
+    private PedidoDTO pedido = new()
+    {
+        FechaPedido = DateTime.Now,
+        DetallePedidos = new List<DetallePedidoDTO>()
+    };
+
+    private List<ClienteDTO> clientes = new();
+    private List<UsuarioDTO> usuarios = new();
+    private List<ProductoDTO> productos = new();
+    private void OnProductoSeleccionado(DetallePedidoDTO detalle, int productoId)
+    {
+        detalle.ProductoId = productoId;
+
+        var productoSeleccionado = productos.FirstOrDefault(p => p.ProductoId == productoId);
+        if (productoSeleccionado != null)
+        {
+            detalle.PrecioUnitario = productoSeleccionado.Precio;
+            ActualizarSubtotal(detalle);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            clientes = (await Http.GetFromJsonAsync<List<ClienteDTO>>("api/clientes")).OrderBy(x => x.ClienteId).ToList();
+            usuarios = (await Http.GetFromJsonAsync<List<UsuarioDTO>>("api/usuarios")).OrderBy(x => x.UsuarioId).ToList();
+            productos = (await Http.GetFromJsonAsync<List<ProductoDTO>>("api/productos")).OrderBy(x => x.ProductoId).ToList();
+
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar pedidos: {ex.Message}", Severity.Error);
+        }
+    }
+    private string ObtenerNombreProducto(int id)
+    {
+        return productos.FirstOrDefault(p => p.ProductoId == id)?.Nombre ?? "Seleccione";
+    }
+
+    private void AgregarDetalle()
+    {
+        pedido.DetallePedidos.Add(new DetallePedidoDTO());
+    }
+
+    private void EliminarDetalle(DetallePedidoDTO detalle)
+    {
+        pedido.DetallePedidos.Remove(detalle);
+        RecalcularTotal();
+    }
+
+    private void ActualizarSubtotal(DetallePedidoDTO detalle)
+    {
+        detalle.Subtotal = detalle.Cantidad * detalle.PrecioUnitario;
+        RecalcularTotal();
+    }
+
+    private void RecalcularTotal()
+    {
+        pedido.Total = pedido.DetallePedidos.Sum(d => d.Subtotal);
+    }
+
+    private async Task CrearPedidoAsync()
+    {
+        _processing = true;
+        StateHasChanged();
+
+        await form.Validate();
+
+        if (!form.IsValid)
+        {
+            _processing = false;
+            Snackbar.Add("Por favor complete los campos requeridos.", Severity.Warning);
+            return;
+        }
+        if (pedido.ClienteId == 0)
+        {
+            _processing = false;
+            Snackbar.Add("Por favor seleccione un cliente.", Severity.Warning);
+            return;
+        }
+        if (pedido.UsuarioId == 0)
+        {
+            _processing = false;
+            Snackbar.Add("Por favor seleccione un usuario.", Severity.Warning);
+            return;
+        }
+        foreach (var item in pedido.DetallePedidos)
+        {
+            if (item.PrecioUnitario <= 0 || item.Cantidad <= 0)
+            {
+                _processing = false;
+                Snackbar.Add("Por favor seleccione una cantidad mayor a 0.", Severity.Warning);
+                return;
+            }
+        }
+        var response = await Http.PostAsJsonAsync("api/Pedido", pedido);
+        if (response.IsSuccessStatusCode)
+        {
+            Snackbar.Add("Pedido registrado exitosamente", Severity.Success);
+            pedido = new PedidoDTO
+            {
+                FechaPedido = DateTime.Now,
+                DetallePedidos = new List<DetallePedidoDTO>()
+            };
+            await form.ResetAsync();
+        }
+        else
+        {
+            Snackbar.Add("Error al registrar el pedido", Severity.Error);
+        }
+
+        _processing = false;
+        StateHasChanged();
+    }
+}

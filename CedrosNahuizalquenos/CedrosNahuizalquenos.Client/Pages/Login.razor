@@ -39,12 +39,17 @@
                       Dense="true"
                       FullWidth="true" />
 
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   OnClick="IniciarSesion"
-                   FullWidth="true"
-                   Class="mb-2">
-            Iniciar Sesión
+        <MudButton Disabled="@_processing" Color="Color.Primary" Variant="Variant.Filled" Class="mt-4 w-100" OnClick="IniciarSesion" FullWidth="true">
+            @if (_processing)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Primary" Class="me-2" />
+                <MudText Class="ms-2"> Validando el usuario... </MudText>
+            }
+            else
+            {
+
+                <MudText>Iniciar Sesión</MudText>
+            }
         </MudButton>
     </MudPaper>
 </div>
@@ -55,9 +60,11 @@
 @code {
     private string usuario;
     private string contrasena;
-
+    private bool _processing = false;
     private async Task IniciarSesion()
     {
+        _processing = true;
+        StateHasChanged();
         var loginRequest = new
         {
             Usuario = usuario,
@@ -66,6 +73,7 @@
 
         try
         {
+            await Task.Delay(2000);
             var response = await Http.PostAsJsonAsync("api/auth/login", loginRequest);
 
             if (response.IsSuccessStatusCode)
@@ -78,11 +86,15 @@
             else
             {
                 Snackbar.Add("Credenciales incorrectas", Severity.Error);
+                _processing = false;
+                StateHasChanged();
             }
         }
         catch (Exception ex)
         {
             Snackbar.Add($"Error al iniciar sesión: {ex.Message}", Severity.Error);
+            _processing = false;
+            StateHasChanged();
         }
     }
     public class LoginResponse
