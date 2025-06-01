@@ -27,8 +27,9 @@ namespace CedrosNahuizalquenos.WebAPI.Controllers
 
             if (usuario != null)
             {
-                var token = "token_simulado"; // reemplaza con JWT real si quieres
-                return Ok(new LoginResponse { Token = token });
+                string token = "token_simulado";
+                int rolId = usuario.Rol;               
+                return Ok(new LoginResponse { Token = token, RolId = rolId });
             }
 
             return Unauthorized("Credenciales inválidas");
@@ -42,6 +43,7 @@ namespace CedrosNahuizalquenos.WebAPI.Controllers
         public class LoginResponse
         {
             public string Token { get; set; }
+            public int RolId { get; set; } // 1 = Admin, 2 = Empleado
         }
     }
 

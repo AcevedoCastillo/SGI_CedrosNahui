@@ -96,6 +96,7 @@
     private async Task Logout()
     {
         await LocalStorage.RemoveItemAsync("loggedIn");
+        await LocalStorage.RemoveItemAsync("rolId");
         isLoggedIn = false;
 
         NavigationManager.NavigateTo("/client/login", forceLoad: true);

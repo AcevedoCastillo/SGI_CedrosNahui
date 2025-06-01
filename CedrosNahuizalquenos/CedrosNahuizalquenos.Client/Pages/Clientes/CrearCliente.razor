@@ -3,6 +3,9 @@
 @inject ISnackbar Snackbar
 @using CedrosNahuizalquenos.Client.Models
 @using System.ComponentModel.DataAnnotations
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
+
 <div style="display: flex; justify-content: center; align-items: center;">
     <MudPaper Class="pa-16 ma-2" MaxWidth="600px" Elevation="3">
     <MudText Typo="Typo.h4" Class="mb-6 text-center" Color="Color.Primary">Formulario de Cliente</MudText>
@@ -121,5 +124,22 @@
             return null;
         var emailAttribute = new EmailAddressAttribute();
         return emailAttribute.IsValid(correo) ? null : "Correo electrónico inválido.";
+    }
+    private bool _initialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_initialized)
+        {
+            _initialized = true;
+            var rolId = await LocalStorage.GetItemAsync<int>("rolId");
+            if (rolId == 0)
+            {
+                Snackbar.Add("Inicia sesión para interactuar con esta pantalla.", Severity.Error);
+                Navigation.NavigateTo("/client");
+            }
+
+            StateHasChanged(); // solo si necesitás que se vuelva a renderizar algo
+        }
     }
 }

@@ -1,8 +1,11 @@
 ﻿using CedrosNahuizalquenos.Aplication.Interfaces;
+using CedrosNahuizalquenos.Client.Pages.Pedidos;
 using CedrosNahuizalquenos.Domain.Entities;
 using CedrosNahuizalquenos.DTOs;
 using CedrosNahuizalquenos.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 
 namespace CedrosNahuizalquenos.Infrastructure.Services
 {
@@ -13,6 +16,14 @@ namespace CedrosNahuizalquenos.Infrastructure.Services
         public PedidoService(ApplicationDbContext context)
         {
             _context = context;
+        }
+
+        public async Task<List<DetallePedido?>> GetByIdAsync(int pedidoId)
+        {
+            return await _context.DetallePedidos
+                .Include(dp => dp.Producto) // Opcional: incluye el producto si lo necesitas
+                .Where(dp => dp.PedidoId == pedidoId)
+                .ToListAsync();
         }
 
         public async Task<int> GuardarPedidoAsync(PedidoDTO pedidoDto)
@@ -56,20 +67,16 @@ namespace CedrosNahuizalquenos.Infrastructure.Services
                     }
                 }
 
-                // (Opcional) Generar factura si viene en el DTO
-                if (pedidoDto.Facturas != null)
+                // Generar factura automáticamente (sin depender del DTO)
+                var factura = new Factura
                 {
-                    foreach (var facturaDto in pedidoDto.Facturas)
-                    {
-                        var factura = new Factura
-                        {
-                            PedidoId = pedido.PedidoId,
-                            FechaEmision = facturaDto.FechaEmision,
-                            Enviada = facturaDto.Enviada
-                        };
-                        _context.Facturas.Add(factura);
-                    }
-                }
+                    PedidoId = pedido.PedidoId,
+                    FechaEmision = DateTime.Now,
+                    Enviada = false 
+                };
+
+                _context.Facturas.Add(factura);
+
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
