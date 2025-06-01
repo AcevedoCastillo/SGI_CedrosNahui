@@ -1,59 +1,141 @@
 ﻿@page "/client/home"
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
+@using CedrosNahuizalquenos.Client.Models
+@using CedrosNahuizalquenos.Client.Pages.Pedidos
 
-<PageTitle>Home</PageTitle>
+<MudPaper Class="pa-4 ma-2" Elevation="1">
+    <MudStack AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+        <MudText Typo="Typo.h3" Align="Align.Center" Class="font-weight-bold">
+            <MudIcon Icon="@Icons.Material.Filled.Home" Class="mr-2" />
+            Bienvenido al Sistema de Gestión de Pedidos
+        </MudText>
+        <MudText Typo="Typo.subtitle1" Align="Align.Center">
+            Administra y supervisa tus pedidos de forma sencilla y eficiente.
+        </MudText>
+    </MudStack>
 
-<MudText Typo="Typo.h3" GutterBottom="true">Hello, world!</MudText>
-<MudText Class="mb-8">Welcome to your new app, powered by MudBlazor and the .NET 9 Template!</MudText>
+    <MudGrid Class="mb-4" Justify="Justify.Center">
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4" Elevation="3" Color="Color.Surface">
+                <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                    <MudStack Direction="Row" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.ListAlt" Color="Color.Primary" />
+                        <MudText Typo="Typo.h6">Total de Pedidos</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.h5" Align="Align.Center">@_pedidos.Count</MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4" Elevation="3" Color="Color.Surface">
+                <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                    <MudStack Direction="Row" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.HourglassEmpty" Color="Color.Warning" />
+                        <MudText Typo="Typo.h6">Pendientes</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.h5" Align="Align.Center">@_pedidos.Count(p => p.Estado == "Por Validar")</MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4" Elevation="3" Color="Color.Surface">
+                <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                    <MudStack Direction="Row" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+                        <MudText Typo="Typo.h6">Aprobados</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.h5" Align="Align.Center">@_pedidos.Count(p => p.Estado == "Aprobado")</MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 
-<MudAlert Severity="Severity.Normal" ContentAlignment="HorizontalAlignment.Start">
-    You can find documentation and examples on our website here:
-    <MudLink Href="https://mudblazor.com" Target="_blank" Typo="Typo.body2" Color="Color.Primary">
-        <b>www.mudblazor.com</b>
-    </MudLink>
-</MudAlert>
+    <MudStack Direction="Row" Spacing="2" Class="mb-4">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@CrearNuevoPedido" StartIcon="@Icons.Material.Filled.Add">
+            Nuevo Pedido
+        </MudButton>
+    </MudStack>
+    <MudText Typo="Typo.h4" Align="Align.Center" Class="font-weight-bold">
+        Ultimos 5 pedidos
+    </MudText>
+    <MudTable Items="_pedidos.Take(5)" Dense="true" Hover="true" Bordered="true" Striped="true">
+        <HeaderContent>
+            <MudTh>ID</MudTh>
+            <MudTh>Cliente</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh>Fecha</MudTh>
+            <MudTh>Acciones</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.PedidoId</MudTd>
+            <MudTd>@context.Cliente?.Nombre</MudTd>
+            <MudTd>@context.Estado</MudTd>
+            <MudTd>@context.FechaPedido.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                               Color="Color.Primary"
+                               OnClick="() => VerDetallePedido(context)" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudPaper>
 
-<br />
-<MudText Typo="Typo.h5" GutterBottom="true">Interactivity in this Template</MudText>
-<br />
-<MudText Typo="Typo.body2">
-    When you opt for the "Global" Interactivity Location, <br />
-    the render modes are defined in App.razor and consequently apply to all child components.<br />
-    In this case, providers are globally set in the MainLayout.<br />
-    <br />
-    On the other hand, if you choose the "Per page/component" Interactivity Location,<br />
-    it is necessary to include the <br />
-    <br />
-    &lt;MudPopoverProvider /&gt; <br />
-    &lt;MudDialogProvider /&gt; <br />
-    &lt;MudSnackbarProvider /&gt; <br />
-    <br />
-    components on every interactive page.<br />
-    <br />
-    If a render mode is not specified for a page, it defaults to Server-Side Rendering (SSR),<br />
-    similar to this page. While MudBlazor allows pages to be rendered in SSR,<br />
-    please note that interactive features, such as buttons and dropdown menus, will not be functional.
-</MudText>
+@code {
+    private List<PedidoDTO> _pedidos = new();
+    private int rolId;
+    private bool _initialized = false;
 
-<br />
-<MudText Typo="Typo.h5" GutterBottom="true">What's New in Blazor with the Release of .NET 9</MudText>
-<br />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_initialized)
+        {
+            _initialized = true;
+            rolId = await LocalStorage.GetItemAsync<int>("rolId");
 
-<MudText Typo="Typo.h6" GutterBottom="true">Prerendering</MudText>
-<MudText Typo="Typo.body2" GutterBottom="true">
-    If you're exploring the features of .NET 9 Blazor,<br /> you might be pleasantly surprised to learn that each page is prerendered on the server,<br /> regardless of the selected render mode.<br /><br />
-    This means that you'll need to inject all necessary services on the server,<br /> even when opting for the wasm (WebAssembly) render mode.<br /><br />
-    This prerendering functionality is crucial to ensuring that WebAssembly mode feels fast and responsive,<br /> especially when it comes to initial page load times.<br /><br />
-    For more information on how to detect prerendering and leverage the RenderContext, you can refer to the following link:
-    <MudLink Href="https://github.com/dotnet/aspnetcore/issues/51468#issuecomment-1783568121" Target="_blank" Typo="Typo.body2" Color="Color.Primary">
-        More details
-    </MudLink>
-</MudText>
+            if (rolId == 0)
+            {
+                Snackbar.Add("Debes iniciar sesión para acceder a esta pantalla.", Severity.Error);
+                Navigation.NavigateTo("/client");
+                return;
+            }
 
-<br />
-<MudText Typo="Typo.h6" GutterBottom="true">InteractiveAuto</MudText>
-<MudText Typo="Typo.body2">
-    A discussion on how to achieve this can be found here:
-    <MudLink Href="https://github.com/dotnet/aspnetcore/issues/51468#issue-1950424116" Target="_blank" Typo="Typo.body2" Color="Color.Primary">
-        More details
-    </MudLink>
-</MudText>
+            await CargarPedidosAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task CargarPedidosAsync()
+    {
+        try
+        {
+            var result = await Http.GetFromJsonAsync<List<PedidoDTO>>("api/Pedido");
+            if (result != null)
+                _pedidos = result;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar pedidos: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task VerDetallePedido(PedidoDTO pedido)
+    {
+        var parameters = new DialogParameters { ["Pedido"] = pedido };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        await DialogService.ShowAsync<DetallePedidoDialog>("Detalle del Pedido", parameters, options);
+    }
+
+    private void CrearNuevoPedido()
+    {
+        Navigation.NavigateTo("/client/nuevo-pedido");
+    }
+
+    private void VerReportes()
+    {
+        Navigation.NavigateTo("/client/reportes");
+    }
+}
