@@ -1,0 +1,188 @@
+﻿@page "/client/pedidos"
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@using CedrosNahuizalquenos.Client.Models
+@using System.Globalization
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
+
+<MudPaper Class="pa-16 ma-2" Elevation="3">
+    <MudTable Items="_pedidos"
+              Dense="@dense"
+              Hover="@hover"
+              Bordered="@bordered"
+              Striped="@striped"
+              Filter="new Func<PedidoDTO, bool>(FilterFunc1)">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Lista de Pedidos</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="searchString1"
+                          Placeholder="Buscar"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          IconSize="Size.Medium"
+                          Class="mt-0" />
+        </ToolBarContent>
+
+        <HeaderContent>
+            <MudTh>ID Pedido</MudTh>
+            <MudTh>Total</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh>Fecha</MudTh>
+        </HeaderContent>
+
+        <RowTemplate>
+            <MudTd>@context.PedidoId</MudTd>
+            <MudTd>@string.Format(CultureInfo.CreateSpecificCulture("en-US"), "{0:C}", context.Total)</MudTd>
+            <MudTd>
+                    @if (rolId == 1)
+                {
+                <MudSelect T="string" Value="context.Estado" Dense="true" 
+                           Immediate="true" 
+                           ValueChanged="@(async e => await CambiarEstado(context, e))">
+                    @foreach (var estado in estadosDisponibles)
+                    {
+                        <MudSelectItem Value="@estado">@estado</MudSelectItem>
+                    }
+                </MudSelect>
+                }
+                else
+                {
+                    <MudText>@context.Estado</MudText>
+                }
+            </MudTd>
+            <MudTd>@context.FechaPedido.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                               Color="Color.Primary"
+                               OnClick="() => VerDetallePedido(context)" />
+                @if (rolId == 1)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Email"
+                                   Color="Color.Secondary"
+                                   OnClick="() => EnviarCorreo(context)" />
+                }
+            </MudTd>
+            
+        </RowTemplate>
+    </MudTable>
+
+    <div class="d-flex flex-wrap mt-4">
+        <MudSwitch T="bool" @bind-Checked="hover" Color="Color.Primary">Hover</MudSwitch>
+        <MudSwitch T="bool" @bind-Checked="dense" Color="Color.Secondary">Dense</MudSwitch>
+        <MudSwitch T="bool" @bind-Checked="striped" Color="Color.Tertiary">Striped</MudSwitch>
+        <MudSwitch T="bool" @bind-Checked="bordered" Color="Color.Warning">Bordered</MudSwitch>
+        <MudSpacer />
+    </div>
+</MudPaper>
+
+@code {
+    private bool dense = false;
+    private bool hover = true;
+    private bool striped = false;
+    private bool bordered = false;
+    private int rolId;
+    private List<PedidoDTO> _pedidos = new();
+    private string searchString1 = "";
+    private List<string> estadosDisponibles = new() { "Por Validar", "Aprobado", "Rechazado", "Finalizado" };
+
+
+    private bool FilterFunc1(PedidoDTO element) => FilterFunc(element, searchString1);
+    public class EstadoDTO
+    {
+        public string Estado { get; set; }
+    }
+    private bool FilterFunc(PedidoDTO element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+
+        return element.Estado.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+            || element.PedidoId.ToString().Contains(searchString)
+            || element.Total.ToString(CultureInfo.InvariantCulture).Contains(searchString);
+    }
+    private async Task VerDetallePedido(PedidoDTO pedido)
+    {
+        var parameters = new DialogParameters { ["Pedido"] = pedido };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true };
+        await DialogService.ShowAsync<DetallePedidoDialog>("Detalle del Pedido", parameters, options);
+    }
+
+    private async Task CambiarEstado(PedidoDTO pedido, string nuevoEstado)
+    {
+        if (pedido.Estado == nuevoEstado) return;
+
+        var requestBody = new EstadoDTO { Estado = nuevoEstado };
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"api/Pedido/{pedido.PedidoId}/estado", requestBody);
+
+            if (response.IsSuccessStatusCode)
+            {
+                pedido.Estado = nuevoEstado;
+                Snackbar.Add("Estado actualizado correctamente", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("No se pudo actualizar el estado", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task EnviarCorreo(PedidoDTO pedido)
+    {
+        try
+        {
+            var response = await Http.PostAsync($"api/Pedido/{pedido.PedidoId}/enviar-correo-aprobacion", null);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Correo de aprobación enviado correctamente.", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("No se pudo enviar el correo.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al enviar correo: {ex.Message}", Severity.Error);
+        }
+    }
+    private async Task CargarPedidosAsync()
+    {
+        try
+        {
+            var result = await Http.GetFromJsonAsync<List<PedidoDTO>>("api/Pedido");
+            if (result != null)
+                _pedidos = result;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar pedidos: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private bool _initialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_initialized)
+        {
+            _initialized = true;
+            rolId = await LocalStorage.GetItemAsync<int>("rolId");
+            await CargarPedidosAsync();
+            if (rolId == 0)
+            {
+                Snackbar.Add("Inicia sesión para interactuar con esta pantalla.", Severity.Error);
+                Navigation.NavigateTo("/client");
+            }
+            StateHasChanged();
+        }
+    }
+}

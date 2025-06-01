@@ -6,8 +6,10 @@
         <MudNavLink Href="/client/clientes/crear" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AddCircle">Crear Cliente</MudNavLink>
     </MudNavGroup>
     <MudNavGroup Title="Pedidos" Icon="@Icons.Material.Filled.AppRegistration">
-        <MudNavLink Href="/client/pedido/ventas" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AddCircle">Reigstrar Pedido</MudNavLink>
+        <MudNavLink Href="/client/pedido/ventas" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AddCircle">Registrar Pedido</MudNavLink>
+        <MudNavLink Href="/client/pedidos" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ListAlt">Ver Pedidos</MudNavLink>
     </MudNavGroup>
+
     @if (rolId == 1)
     {
         <MudNavGroup Title="Reportes" Icon="@Icons.Material.Filled.LibraryBooks">
@@ -22,7 +24,7 @@
     }
 
     <MudNavGroup Title="Productos" Icon="@Icons.Material.Filled.Person">
-        <MudNavLink Href="/client/productos" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AddBox">Lista Productos</MudNavLink>
+        <MudNavLink Href="/client/productos" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ListAlt">Lista Productos</MudNavLink>
         @if (rolId == 1)
         {
             <MudNavLink Href="/client/productos/crear" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AddBox">Crear Producto</MudNavLink>
