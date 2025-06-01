@@ -1,0 +1,70 @@
+﻿@using CedrosNahuizalquenos.Client.Models
+@inject IDialogService DialogService
+
+<MudDialog MaxWidth="MaxWidth.Medium" FullWidth="true">
+    <DialogContent>
+
+        <MudStack Direction="Row" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.Center" Spacing="1" Class="mb-4">
+            <MudText Typo="Typo.h5">Detalle del Pedido</MudText>
+            <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined">#@Pedido?.PedidoId</MudChip>
+        </MudStack>
+
+        <MudPaper Class="pa-4 mb-4 mud-elevation-1" Style="background-color: var(--mud-palette-surface-dark); border-radius: 8px;">
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudText><b>Cliente:</b> @Pedido?.Cliente?.Nombre</MudText>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudText><b>Estado:</b> @Pedido?.Estado</MudText>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudText><b>Fecha:</b> @Pedido?.FechaPedido.ToString("dd/MM/yyyy")</MudText>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudText><b>Método de Pago:</b> @Pedido?.MetodoPago</MudText>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        @if (Pedido?.DetallePedidos != null && Pedido.DetallePedidos.Any())
+        {
+            <MudTable Items="@Pedido.DetallePedidos" Dense="true" Hover="true" Bordered="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Producto</MudTh>
+                    <MudTh>Cantidad</MudTh>
+                    <MudTh>Precio Unitario</MudTh>
+                    <MudTh>Subtotal</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@(context?.Producto?.Nombre ?? "-")</MudTd>
+                    <MudTd>@context.Cantidad</MudTd>
+                    <MudTd>@string.Format("{0:C}", context.PrecioUnitario)</MudTd>
+                    <MudTd>@string.Format("{0:C}", context.Subtotal)</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else
+        {
+            <MudText Class="mt-4">No hay detalles para este pedido.</MudText>
+        }
+
+        <MudDivider Class="my-3" />
+
+        <div class="d-flex justify-end">
+            <MudText Typo="Typo.h6"><b>Total:</b> @string.Format("{0:C}", Pedido?.Total ?? 0)</MudText>
+        </div>
+
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="Close">Cerrar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public PedidoDTO Pedido { get; set; }
+
+    private void Close() => MudDialog.Close();
+}
