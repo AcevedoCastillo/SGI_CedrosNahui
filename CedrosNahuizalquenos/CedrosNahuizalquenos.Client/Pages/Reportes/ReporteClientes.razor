@@ -4,6 +4,8 @@
 @inject ISnackbar Snackbar
 @using CedrosNahuizalquenos.Client.Models
 @using System.Globalization
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
 
 <MudPaper Class="pa-16 ma-2" Elevation="3">
     <MudText Typo="Typo.h5" Class="mb-2">Reporte de Pedidos Por Cliente</MudText>
@@ -162,5 +164,27 @@
             Snackbar.Add($"Error al exportar: {ex.Message}", Severity.Error);
         }
 
+    }
+    private bool _initialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_initialized)
+        {
+            _initialized = true;
+            var rolId = await LocalStorage.GetItemAsync<int>("rolId");
+
+            if (rolId == 2) // Solo admin
+            {
+                Snackbar.Add("No posees los permisos para utilizar esta pantalla.", Severity.Error);
+                Navigation.NavigateTo("/client/home");
+            }
+            if (rolId == 0)
+            {
+                Snackbar.Add("Inicia sesión para interactuar con esta pantalla.", Severity.Error);
+                Navigation.NavigateTo("/client");
+            }
+            StateHasChanged(); // solo si necesitás que se vuelva a renderizar algo
+        }
     }
 }

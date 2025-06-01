@@ -5,6 +5,7 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@using CedrosNahuizalquenos.Client.Models
 @using MudBlazor
 
 
@@ -61,6 +62,7 @@
     private string usuario;
     private string contrasena;
     private bool _processing = false;
+
     private async Task IniciarSesion()
     {
         _processing = true;
@@ -81,6 +83,7 @@
                 var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
                 Snackbar.Add("Inicio de sesión exitoso", Severity.Success);
                 await LocalStorage.SetItemAsync("loggedIn", true);
+                await LocalStorage.SetItemAsync("rolId", result.RolId);
                 Navigation.NavigateTo("/client/home", forceLoad: true);
             }
             else
@@ -97,10 +100,4 @@
             StateHasChanged();
         }
     }
-    public class LoginResponse
-    {
-        public string Token { get; set; }
-    }
-
-
 }

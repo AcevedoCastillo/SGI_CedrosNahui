@@ -3,7 +3,8 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @using CedrosNahuizalquenos.Client.Models
-
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
 <MudPaper Class="pa-16 ma-2" Elevation="3">
     <MudTable Items="FilteredUsuarios" Dense="@dense" Hover="@hover" Bordered="@bordered" Striped="@striped"
               @bind-SelectedItem="_usuarioEnEdicion">
@@ -198,6 +199,29 @@
             {
                 Snackbar.Add($"Error: {ex.Message}", Severity.Error);
             }
+        }
+    }
+    private bool _initialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_initialized)
+        {
+            _initialized = true;
+            var rolId = await LocalStorage.GetItemAsync<int>("rolId");
+
+            if (rolId == 2) // Solo admin
+            {
+                Snackbar.Add("No posees los permisos para utilizar esta pantalla.", Severity.Error);
+                Navigation.NavigateTo("/client/home");
+            }
+            if (rolId == 0)
+            {
+                Snackbar.Add("Inicia sesión para interactuar con esta pantalla.", Severity.Error);
+                Navigation.NavigateTo("/client");
+            }
+
+            StateHasChanged(); // solo si necesitás que se vuelva a renderizar algo
         }
     }
 }
