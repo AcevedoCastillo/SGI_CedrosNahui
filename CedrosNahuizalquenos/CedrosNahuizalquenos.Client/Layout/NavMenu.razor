@@ -24,10 +24,10 @@
     }
 
     <MudNavGroup Title="Productos" Icon="@Icons.Material.Filled.Person">
-        <MudNavLink Href="/client/productos" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AddBox">Lista Productos</MudNavLink>
+        <MudNavLink Href="/client/productos" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ListAlt">Lista Productos</MudNavLink>
         @if (rolId == 1)
         {
-            <MudNavLink Href="/client/productos/crear" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ListAlt">Crear Producto</MudNavLink>
+            <MudNavLink Href="/client/productos/crear" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AddBox">Crear Producto</MudNavLink>
         }
     </MudNavGroup>
 </MudNavMenu>
